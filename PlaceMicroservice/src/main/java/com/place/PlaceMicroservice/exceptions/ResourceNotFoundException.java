@@ -1,4 +1,4 @@
-package com.hotel.PlaceMicroservice.exceptions;
+package com.place.PlaceMicroservice.exceptions;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String s) {

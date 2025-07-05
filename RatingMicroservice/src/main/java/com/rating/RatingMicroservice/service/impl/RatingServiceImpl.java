@@ -14,11 +14,13 @@ public class RatingServiceImpl implements RatingService {
     @Autowired
     private RatingRepository ratingRepository;
 
+    // create
     @Override
     public Rating create(Rating rating) {
         return ratingRepository.save(rating);
     }
 
+    // read
     @Override
     public List<Rating> getAllRatings() {
         return ratingRepository.findAll();

@@ -1,6 +1,6 @@
-package com.hotel.PlaceMicroservice.repository;
+package com.place.PlaceMicroservice.repository;
 
-import com.hotel.PlaceMicroservice.entity.Place;
+import com.place.PlaceMicroservice.entity.Place;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

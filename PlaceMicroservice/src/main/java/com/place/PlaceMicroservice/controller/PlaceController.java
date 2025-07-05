@@ -1,7 +1,7 @@
-package com.hotel.PlaceMicroservice.controller;
+package com.place.PlaceMicroservice.controller;
 
-import com.hotel.PlaceMicroservice.entity.Place;
-import com.hotel.PlaceMicroservice.service.PlaceService;
+import com.place.PlaceMicroservice.entity.Place;
+import com.place.PlaceMicroservice.service.PlaceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,16 +21,11 @@ public class PlaceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(placeService.addPlace(place));
     }
 
-    @PutMapping(value="/id/{placeId}")
-    public ResponseEntity<Place> updatePlaceByPlaceId(@PathVariable String placeId, @RequestBody Place place) {
-        Place updatedPlace = placeService.updatePlaceByPlaceId(placeId, place);
-        return ResponseEntity.ok(updatedPlace);
-    }
 
-    @PutMapping(value="/name/{placeName}")
-    public ResponseEntity<Place> updatePlaceByPlaceName(@PathVariable String placeName, @RequestBody Place place) {
-        Place updatedPlace = placeService.updatePlaceByPlaceName(placeName, place);
-        return ResponseEntity.ok(updatedPlace);
+    @GetMapping
+    public ResponseEntity<List<Place>> getAllPlaces() {
+        List<Place> allPlaces = placeService.getAll();
+        return ResponseEntity.ok(allPlaces);
     }
 
     @GetMapping(value = "/id/{placeId}")
@@ -46,11 +41,18 @@ public class PlaceController {
     }
 
 
-    @GetMapping
-    public ResponseEntity<List<Place>> getAll() {
-        List<Place> allPlaces = placeService.getAll();
-        return ResponseEntity.ok(allPlaces);
+    @PutMapping(value="/id/{placeId}")
+    public ResponseEntity<Place> updatePlaceByPlaceId(@PathVariable String placeId, @RequestBody Place place) {
+        Place updatedPlace = placeService.updatePlaceByPlaceId(placeId, place);
+        return ResponseEntity.ok(updatedPlace);
     }
+
+    @PutMapping(value="/name/{placeName}")
+    public ResponseEntity<Place> updatePlaceByPlaceName(@PathVariable String placeName, @RequestBody Place place) {
+        Place updatedPlace = placeService.updatePlaceByPlaceName(placeName, place);
+        return ResponseEntity.ok(updatedPlace);
+    }
+
 
     @DeleteMapping("/id/{placeID}")
     public ResponseEntity<String> deletePlaceByPlaceId(@PathVariable String placeID) {

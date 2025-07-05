@@ -17,7 +17,7 @@ public class RatingController {
     private RatingService ratingService;
 
     @PostMapping
-    public ResponseEntity<Rating> create(@RequestBody Rating rating){
+    public ResponseEntity<Rating> createRating(@RequestBody Rating rating){
         return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.create(rating));
     }
 
