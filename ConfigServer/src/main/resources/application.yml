@@ -5,8 +5,8 @@ spring:
     config:
       server:
         git:
-          uri: https://github.com/trimoyee-g/microservice-config
+          uri: ${CONFIG_REPO_URI}
           clone-on-start: true
 
 server:
-  port: 8085
+  port: ${SERVER_PORT}
