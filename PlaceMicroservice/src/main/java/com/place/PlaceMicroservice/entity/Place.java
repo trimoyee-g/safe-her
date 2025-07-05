@@ -1,17 +1,36 @@
-package com.user.UserMicroservice.entity;
+package com.hotel.PlaceMicroservice.entity;
 
-import lombok.*;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
 
 //@Getter
 //@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Entity
+@Table(name = "micro_places")
 public class Place {
+
+    @Id
+    @Column(name = "PLACE_ID")
     private String placeId;
+
+    @Column(name = "PLACE_NAME")
     private String placeName;
+
+    @Column(name = "PLACE_LOCATION")
     private String placeLocation;
+
+    @Column(name = "PLACE_ABOUT")
     private String placeAbout;
+
+    @Transient
+    private List<Rating> ratings;
 
     public String getPlaceId() {
         return placeId;
@@ -44,5 +63,12 @@ public class Place {
     public void setPlaceAbout(String placeAbout) {
         this.placeAbout = placeAbout;
     }
-}
 
+    public List<Rating> getRatings() {
+        return ratings;
+    }
+
+    public void setRatings(List<Rating> ratings) {
+        this.ratings = ratings;
+    }
+}
