@@ -2,6 +2,9 @@ package com.place.PlaceMicroservice.controller;
 
 import com.place.PlaceMicroservice.entity.Place;
 import com.place.PlaceMicroservice.service.PlaceService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,17 +32,40 @@ public class PlaceController {
     }
 
     @GetMapping(value = "/id/{placeId}")
+    @CircuitBreaker(name="ratingUserBreakerById", fallbackMethod = "ratingUserFallbackById")
+    @Retry(name = "ratingUserRetryById", fallbackMethod = "ratingUserFallbackById")
+    @RateLimiter(name = "ratingUserRateLimiterById", fallbackMethod = "ratingUserFallbackById")
     public ResponseEntity<Place> getPlaceByPlaceId(@PathVariable String placeId){
         Place place = placeService.getPlaceByPlaceId(placeId);
         return ResponseEntity.ok(place);
     }
+    public ResponseEntity<Place> ratingUserFallbackById(String placeId, Exception ex){
+        Place place = Place.builder()
+                .placeName("dummy place")
+                .placeAbout("too many requests or some service is down")
+                .placeLocation("dummy location")
+                .placeId("000")
+                .build();
+        return new ResponseEntity<>(place, HttpStatus.TOO_MANY_REQUESTS);
+    }
 
     @GetMapping(value = "/name/{placeName}")
+    @CircuitBreaker(name="ratingUserBreakerByName", fallbackMethod = "ratingUserFallbackByName")
+    @Retry(name = "ratingUserRetryByName", fallbackMethod = "ratingUserFallbackByName")
+    @RateLimiter(name = "ratingUserRateLimiterByName", fallbackMethod = "ratingUserFallbackByName")
     public ResponseEntity<Place> getPlaceByPlaceName(@PathVariable String placeName){
         Place place = placeService.getPlaceByPlaceName(placeName);
         return ResponseEntity.ok(place);
     }
-
+    public ResponseEntity<Place> ratingUserFallbackByName(String placeName, Exception ex){
+        Place place = Place.builder()
+                .placeName("dummy place")
+                .placeAbout("too many requests or some service is down")
+                .placeLocation("dummy location")
+                .placeId("000")
+                .build();
+        return new ResponseEntity<>(place, HttpStatus.TOO_MANY_REQUESTS);
+    }
 
     @PutMapping(value="/id/{placeId}")
     public ResponseEntity<Place> updatePlaceByPlaceId(@PathVariable String placeId, @RequestBody Place place) {
