@@ -23,9 +23,10 @@ public class PlaceServiceImpl implements PlaceService {
 
     // create
     @Override
-    public Place addPlace(Place place) {
+    public Place addPlace(Place place, String userId) {
         String randomPlaceID = UUID.randomUUID().toString();
         place.setPlaceId(randomPlaceID);
+        place.setCreatedBy(userId);
         return placeRepository.save(place);
     }
 

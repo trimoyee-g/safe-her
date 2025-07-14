@@ -12,7 +12,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFound.class)
     public ResponseEntity<ApiResponse> handleResourceNotFoundException(ResourceNotFound ex){
         String message = ex.getMessage();
-        ApiResponse response = ApiResponse.builder().message(message).success(true).status(HttpStatus.NOT_FOUND).build();
+        ApiResponse response = ApiResponse.builder().message(message).success(false).status(HttpStatus.NOT_FOUND).build();
         return new ResponseEntity<ApiResponse>(response, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse> handleGlobalException(Exception ex){
+        ApiResponse response = ApiResponse.builder()
+                .message("Internal server error: " + ex.getMessage())
+                .success(false)
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 }

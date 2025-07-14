@@ -29,6 +29,9 @@ public class Place {
     @Column(name = "PLACE_ABOUT")
     private String placeAbout;
 
+    @Column(name = "PLACE_CREATED_BY")
+    private String createdBy;
+
     @Transient
     private List<Rating> ratings;
 
@@ -70,5 +73,13 @@ public class Place {
 
     public void setRatings(List<Rating> ratings) {
         this.ratings = ratings;
+    }
+
+    public String getCreatedBy(){
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy){
+        this.createdBy = createdBy;
     }
 }

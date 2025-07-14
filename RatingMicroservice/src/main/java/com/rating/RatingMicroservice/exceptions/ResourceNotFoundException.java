@@ -1,4 +1,4 @@
-package com.place.PlaceMicroservice.exceptions;
+package com.rating.RatingMicroservice.exceptions;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String s) {

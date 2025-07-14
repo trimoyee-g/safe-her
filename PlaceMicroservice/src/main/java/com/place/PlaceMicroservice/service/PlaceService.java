@@ -7,7 +7,7 @@ import java.util.List;
 public interface PlaceService {
 
     // create
-    Place addPlace(Place place);
+    Place addPlace(Place place, String userId);
 
     // read
     List<Place> getAll();

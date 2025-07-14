@@ -2,6 +2,7 @@ package com.user.UserMicroservice.controller;
 
 import com.user.UserMicroservice.entity.User;
 import com.user.UserMicroservice.service.UserService;
+import com.user.UserMicroservice.util.AccessControlUtil;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -55,13 +56,19 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<User> updateUser(@PathVariable String userId, @RequestBody User user) {
+    public ResponseEntity<User> updateUser(@PathVariable String userId, @RequestBody User user, @RequestHeader("X-User-Id") String requesterId, @RequestHeader("X-User-Role") String role) {
+        if (!AccessControlUtil.isSelf(requesterId, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
         User updatedUser = userService.updateUser(userId, user);
         return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<String> deleteUser(@PathVariable String userId) {
+    public ResponseEntity<String> deleteUser(@PathVariable String userId, @RequestHeader("X-User-Id") String requesterId, @RequestHeader("X-User-Role") String role) {
+        if (!AccessControlUtil.isAdminOrSelf(role, requesterId, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access Denied");
+        }
         userService.deleteUser(userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body("User deleted successfully");
     }

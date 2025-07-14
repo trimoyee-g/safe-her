@@ -48,14 +48,15 @@ public class RatingController {
         return ResponseEntity.ok((ratingService.getRatingByPlaceId(placeId)));
     }
 
-    public ResponseEntity<Rating> ratingPlaceFallback(String userId, Exception ex){
-        Rating rating = Rating.builder()
+    public ResponseEntity<List<Rating>> userPlaceFallback(String userId, Throwable ex) {
+        Rating dummyRating = Rating.builder()
                 .ratingId("000")
-                .placeId("000")
                 .userId("000")
-                .rating(-100)
-                .feedback("too many requests or some service is down")
+                .placeId("000")
+                .rating(-1)
+                .feedback("Fallback: Service unavailable")
                 .build();
-        return new ResponseEntity<>(rating, HttpStatus.TOO_MANY_REQUESTS);
+        return new ResponseEntity<>(List.of(dummyRating), HttpStatus.TOO_MANY_REQUESTS);
     }
+
 }
