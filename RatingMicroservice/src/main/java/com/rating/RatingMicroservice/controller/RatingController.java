@@ -88,4 +88,17 @@ public class RatingController {
         return new ResponseEntity<>(List.of(dummyRating), HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    @GetMapping("/places/{placeId}/average")
+    @CircuitBreaker(name="userPlaceBreaker", fallbackMethod = "ratingPlaceFallbackAvg")
+    @Retry(name = "userPlaceRetry", fallbackMethod = "ratingPlaceFallbackAvg")
+    @RateLimiter(name = "userPlaceRateLimiter", fallbackMethod = "ratingPlaceFallbackAvg")
+    public ResponseEntity<Double> getAverageRating(@PathVariable String placeId) {
+        return ResponseEntity.ok(ratingService.getAverageRatingByPlaceId(placeId));
+    }
+
+    // Fallback
+    public ResponseEntity<Double> ratingPlaceFallbackAvg(String placeId, Exception ex) {
+        return ResponseEntity.ok(0.0); // default fallback value
+    }
+
 }

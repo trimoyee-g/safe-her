@@ -12,6 +12,7 @@ public class Place {
     private String placeName;
     private String placeLocation;
     private String placeAbout;
+    private Double averageRating;
 
     public String getPlaceId() {
         return placeId;
@@ -43,6 +44,14 @@ public class Place {
 
     public void setPlaceAbout(String placeAbout) {
         this.placeAbout = placeAbout;
+    }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
     }
 }
 

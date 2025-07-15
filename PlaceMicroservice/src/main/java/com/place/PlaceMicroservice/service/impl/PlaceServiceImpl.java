@@ -48,6 +48,13 @@ public class PlaceServiceImpl implements PlaceService {
         Place place = placeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Place with given ID does not exist on server"));
 
+        try {
+            Double avgRating = ratingService.getAverageRatingByPlaceId(id);
+            place.setAverageRating(avgRating);
+        } catch (Exception e) {
+            place.setAverageRating(0.0); // fallback default
+        }
+
         List<Rating> ratings = ratingService.getRatingsByPlaceId(place.getPlaceId());
         place.setRatings(ratings);
 
@@ -69,6 +76,7 @@ public class PlaceServiceImpl implements PlaceService {
     public List<Place> getPlacesByName(String placeName) {
         return placeRepository.getPlacesByName(placeName);
     }
+
 
     // update
     @Override
@@ -94,6 +102,7 @@ public class PlaceServiceImpl implements PlaceService {
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("Place with given ID is not found on server"));
     }
+
 
     // delete
     @Override

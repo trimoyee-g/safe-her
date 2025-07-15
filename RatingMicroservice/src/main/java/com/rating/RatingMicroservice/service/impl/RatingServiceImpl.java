@@ -72,4 +72,21 @@ public class RatingServiceImpl implements RatingService {
         }
         return ratings;
     }
+
+    @Override
+    public Double getAverageRatingByPlaceId(String placeId) {
+        List<Rating> ratings = ratingRepository.findByPlaceId(placeId);
+
+        if (ratings.isEmpty()) {
+            throw new ResourceNotFoundException("No ratings found for place ID: " + placeId);
+        }
+
+        double average = ratings.stream()
+                .mapToInt(Rating::getRating)
+                .average()
+                .orElse(0.0);
+
+        return average;
+    }
+
 }

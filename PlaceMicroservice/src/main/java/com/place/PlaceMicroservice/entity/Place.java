@@ -35,6 +35,9 @@ public class Place {
     @Transient
     private List<Rating> ratings;
 
+    @Transient
+    private Double averageRating;
+
     public String getPlaceId() {
         return placeId;
     }
@@ -81,5 +84,13 @@ public class Place {
 
     public void setCreatedBy(String createdBy){
         this.createdBy = createdBy;
+    }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
     }
 }

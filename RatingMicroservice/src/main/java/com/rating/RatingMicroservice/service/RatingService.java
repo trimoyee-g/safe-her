@@ -17,6 +17,8 @@ public interface RatingService {
     List<Rating> getRatingByPlaceId(String placeId);
     List<Rating> getRatingsByUserIdWithinPeriod(String userId, LocalDateTime start, LocalDateTime end);
     List<Rating> getRatingsByPlaceIdWithinPeriod(String placeId, LocalDateTime start, LocalDateTime end);
+    Double getAverageRatingByPlaceId(String placeId);
+
 
 
 }

@@ -23,6 +23,9 @@ public interface RatingService {
     @GetMapping("/ratings/places/{placeId}")
     public List<Rating> getRatingsByPlaceId(@PathVariable String placeId);
 
+    @GetMapping("/ratings/places/{placeId}/average")
+    Double getAverageRatingByPlaceId(@PathVariable("placeId") String placeId);
+
     @GetMapping("/places/{placeId}/period")
     public ResponseEntity<List<Rating>> getPlaceRatingsByPeriod(
             @PathVariable String placeId,

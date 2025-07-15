@@ -42,6 +42,9 @@ public interface RatingService {
             @RequestParam("end") String end
     );
 
+    @GetMapping("/ratings/places/{placeId}/average")
+    Double getAverageRatingByPlaceId(@PathVariable("placeId") String placeId);
+
 //    // update
 //    @PutMapping("/ratings/{ratingId}")
 //    public Rating updateRating(@PathVariable String ratingId, Rating rating);
