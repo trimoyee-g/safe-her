@@ -5,6 +5,8 @@ import com.auth.AuthMicroservice.dto.LoginRequest;
 import com.auth.AuthMicroservice.dto.LoginResponse;
 import com.auth.AuthMicroservice.dto.RegisterRequest;
 import com.auth.AuthMicroservice.entity.User;
+import com.auth.AuthMicroservice.external.UserClient;
+import com.auth.AuthMicroservice.payload.UserDto;
 import com.auth.AuthMicroservice.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -21,19 +23,28 @@ public class AuthUserService {
     private final AuthUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private UserClient userClient;
 
     public void register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
+        String generatedUserId = UUID.randomUUID().toString();
         User user = User.builder()
-                .userId(UUID.randomUUID().toString())
+                .userId(generatedUserId)
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : "USER")
                 .build();
 
         userRepository.save(user);
+        userClient.createUser(UserDto.builder()
+                .userId(generatedUserId)
+                .userName(request.getUsername())
+                .userEmail(request.getEmail()) // ensure it's present in RegisterRequest
+                .userAbout("Created via AuthService")
+                .userGender("Not specified") // optional
+                .build());
     }
 
     public LoginResponse login(LoginRequest request) {

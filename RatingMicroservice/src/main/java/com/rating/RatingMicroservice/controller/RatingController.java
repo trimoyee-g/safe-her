@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -46,6 +47,34 @@ public class RatingController {
     @RateLimiter(name = "userPlaceRateLimiter", fallbackMethod = "userPlaceFallback")
     public ResponseEntity<List<Rating>> getRatingsByPlaceId(@PathVariable String placeId){
         return ResponseEntity.ok((ratingService.getRatingByPlaceId(placeId)));
+    }
+
+    @GetMapping("/users/{userId}/period")
+    @CircuitBreaker(name="userPlaceBreaker", fallbackMethod = "userPlaceFallback")
+    @Retry(name = "userPlaceRetry", fallbackMethod = "userPlaceFallback")
+    @RateLimiter(name = "userPlaceRateLimiter", fallbackMethod = "userPlaceFallback")
+    public ResponseEntity<List<Rating>> getUserRatingsByPeriod(
+            @PathVariable String userId,
+            @RequestParam("start") String start,
+            @RequestParam("end") String end
+    ) {
+        LocalDateTime startDate = LocalDateTime.parse(start);
+        LocalDateTime endDate = LocalDateTime.parse(end);
+        return ResponseEntity.ok(ratingService.getRatingsByUserIdWithinPeriod(userId, startDate, endDate));
+    }
+
+    @GetMapping("/places/{placeId}/period")
+    @CircuitBreaker(name="userPlaceBreaker", fallbackMethod = "userPlaceFallback")
+    @Retry(name = "userPlaceRetry", fallbackMethod = "userPlaceFallback")
+    @RateLimiter(name = "userPlaceRateLimiter", fallbackMethod = "userPlaceFallback")
+    public ResponseEntity<List<Rating>> getPlaceRatingsByPeriod(
+            @PathVariable String placeId,
+            @RequestParam("start") String start,
+            @RequestParam("end") String end
+    ) {
+        LocalDateTime startDate = LocalDateTime.parse(start);
+        LocalDateTime endDate = LocalDateTime.parse(end);
+        return ResponseEntity.ok(ratingService.getRatingsByPlaceIdWithinPeriod(placeId, startDate, endDate));
     }
 
     public ResponseEntity<List<Rating>> userPlaceFallback(String userId, Throwable ex) {
