@@ -65,6 +65,11 @@ public class PlaceServiceImpl implements PlaceService {
         return place;
     }
 
+    @Override
+    public List<Place> getPlacesByName(String placeName) {
+        return placeRepository.getPlacesByName(placeName);
+    }
+
     // update
     @Override
     public Place updatePlaceByPlaceName(String placeName, Place place) {

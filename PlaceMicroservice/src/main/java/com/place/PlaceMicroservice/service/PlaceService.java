@@ -13,6 +13,7 @@ public interface PlaceService {
     List<Place> getAll();
     Place getPlaceByPlaceId(String id);
     Place getPlaceByPlaceName(String placeName);
+    List<Place> getPlacesByName(String placeName);
 
     // update
     Place updatePlaceByPlaceId(String id, Place place);

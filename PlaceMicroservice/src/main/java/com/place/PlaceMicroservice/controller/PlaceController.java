@@ -71,6 +71,17 @@ public class PlaceController {
         return new ResponseEntity<>(place, HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> getPlacesByName(@RequestParam("name") String name) {
+        List<Place> places = placeService.getPlacesByName(name);
+        if (places.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("No places found");
+        }
+        return ResponseEntity.ok(places);
+    }
+
     @PutMapping(value="/id/{placeId}")
     public ResponseEntity<Place> updatePlaceByPlaceId(@PathVariable String placeId, @RequestBody Place place,
                                                       @RequestHeader("X-User-Id") String requesterId,

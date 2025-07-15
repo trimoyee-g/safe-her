@@ -2,6 +2,7 @@ package com.user.UserMicroservice.externalservices;
 
 import com.user.UserMicroservice.entity.Place;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,9 @@ public interface PlaceService {
 
     @GetMapping("/places/name/{placeName}")
     public Place getPlaceByPlaceName(@PathVariable String placeName);
+
+    @GetMapping("/places/search")
+    public ResponseEntity<?> getPlacesByName(@RequestParam("name") String name);
 
 
     // update
