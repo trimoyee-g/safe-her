@@ -8,16 +8,8 @@ import com.user.UserMicroservice.externalservices.PlaceService;
 import com.user.UserMicroservice.externalservices.RatingService;
 import com.user.UserMicroservice.repository.UserRepository;
 import com.user.UserMicroservice.service.UserService;
-import org.antlr.v4.runtime.misc.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,8 +28,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User saveUser(User user) {
-        String randomUserID = UUID.randomUUID().toString();
-        user.setUserId(randomUserID);
+        if (user.getUserId() == null || user.getUserId().isEmpty()) {
+            throw new RuntimeException("User ID must be provided");
+        }
         return userRepository.save(user);
     }
 
@@ -77,6 +70,12 @@ public class UserServiceImpl implements UserService {
         user.setUserRatings(ratingList);
         return user;
     }
+
+    @Override
+    public List<User> getUsersByName(String name) {
+        return userRepository.getUsersByName(name);
+    }
+
 
 
     @Override

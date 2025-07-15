@@ -44,6 +44,18 @@ public class UserController {
         return ResponseEntity.ok(allUser);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> getUsersByName(@RequestParam("name") String name) {
+        List<User> users = userService.getUsersByName(name);
+        if (users.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("No users found");
+        }
+        return ResponseEntity.ok(users);
+    }
+
+
     public ResponseEntity<User> ratingPlaceFallback(String userId, Exception ex){
         User user = User.builder()
                 .userName("dummy user")
