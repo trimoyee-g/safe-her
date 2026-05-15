@@ -1,0 +1,111 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: rating-service
+
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://safeher:safeher@localhost:27017/safeher_ratings?authSource=admin}
+      database: safeher_ratings
+    elasticsearch:
+      repositories:
+        enabled: true
+
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+    username: ${ES_USER:}
+    password: ${ES_PASSWORD:}
+    connection-timeout: 5s
+    socket-timeout: 10s
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+        acks: all
+        retries: 3
+        enable.idempotence: true
+    consumer:
+      group-id: rating-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.safeher.*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://admin:admin@localhost:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+
+  kafka:
+    topics:
+      rating-created: rating.created
+      rating-updated: rating.updated
+      rating-deleted: rating.deleted
+
+  rating:
+    max-per-user-per-place: 1        # one active rating per user per place; updates allowed
+    min-score: 1
+    max-score: 5
+    max-body-length: 2000
+    max-photos: 5
+    helpful-vote-limit-per-user: 1   # one helpful vote per user per review
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      place-service:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        registerHealthIndicator: true
+      user-service:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      place-service:
+        maxAttempts: 3
+        waitDuration: 500ms
+  ratelimiter:
+    instances:
+      rating-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.safeher.ratingservice: DEBUG
+    org.springframework.security: INFO
+    org.springframework.data.mongodb: INFO
