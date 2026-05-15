@@ -1,0 +1,32 @@
+# configs/auth-service.yml
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/safeher_auth
+    username: ${DB_USER:safeher}
+    password: ${DB_PASSWORD:safeher}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  kafka:
+    topics:
+      auth-user-registered: auth.user.registered
+      auth-user-deleted: auth.user.deleted
+
+  security:
+    bcrypt-strength: 12
+    max-login-attempts: 5
+    lockout-duration-minutes: 15

@@ -1,0 +1,27 @@
+# configs/rating-service.yml
+server:
+  port: 8084
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://safeher:safeher@localhost:27017/safeher_ratings?authSource=admin}
+      database: safeher_ratings
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+
+app:
+  kafka:
+    topics:
+      rating-created: rating.created
+      rating-updated: rating.updated
+      rating-deleted: rating.deleted
+  rating:
+    max-per-user-per-place: 1       # one rating per user per place; update is allowed
+
+resilience4j:
+  ratelimiter:
+    instances:
+      rating-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s

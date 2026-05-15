@@ -1,0 +1,58 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+
+  security:
+    user:
+      name: ${CONFIG_USERNAME:config}
+      password: ${CONFIG_PASSWORD:config}
+
+  profiles:
+    active: native                    # use local filesystem; swap to 'git' in prod
+
+  cloud:
+    config:
+      server:
+        native:
+          # Config files live under src/main/resources/configs/
+          # or override with CONFIG_REPO_PATH env var for an external directory
+          search-locations: ${CONFIG_REPO_PATH:classpath:/configs}
+        # ── Git backend (prod) ─────────────────────────────────────────────
+        # git:
+        #   uri: ${CONFIG_GIT_URI:https://github.com/your-org/safeher-config}
+        #   default-label: main
+        #   username: ${CONFIG_GIT_USER:}
+        #   password: ${CONFIG_GIT_TOKEN:}
+        #   clone-on-start: true
+        #   force-pull: true
+
+        encrypt:
+          enabled: false              # set true and add ENCRYPT_KEY env var to encrypt secrets
+
+# Eureka – Config Server registers itself so services can discover it
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://admin:admin@localhost:8761/eureka}
+    fetch-registry: false            # Config Server doesn't need to discover others
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh,bus-refresh
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.safeher.configserver: INFO
+    org.springframework.cloud.config: DEBUG

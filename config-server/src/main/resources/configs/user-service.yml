@@ -1,0 +1,37 @@
+# configs/user-service.yml
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/safeher_users
+    username: ${DB_USER:safeher}
+    password: ${DB_PASSWORD:safeher}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  kafka:
+    topics:
+      user-created: user.created
+      user-updated: user.updated
+      user-deleted: user.deleted
+  upload:
+    avatar-max-size-mb: 5
+
+resilience4j:
+  ratelimiter:
+    instances:
+      user-api:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1s
