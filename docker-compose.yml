@@ -1,0 +1,344 @@
+name: safeher
+
+services:
+
+  # ══════════════════════════════════════════════════════════════
+  # INFRASTRUCTURE
+  # ══════════════════════════════════════════════════════════════
+
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: sp-postgres-auth
+    environment:
+      POSTGRES_DB: safeher_auth
+      POSTGRES_USER: safeher
+      POSTGRES_PASSWORD: safeher
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safeher -d safeher_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-users:
+    image: postgres:16-alpine
+    container_name: sp-postgres-users
+    environment:
+      POSTGRES_DB: safeher_users
+      POSTGRES_USER: safeher
+      POSTGRES_PASSWORD: safeher
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_users_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safeher -d safeher_users"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-places:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: sp-postgres-places
+    environment:
+      POSTGRES_DB: safeher_places
+      POSTGRES_USER: safeher
+      POSTGRES_PASSWORD: safeher
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_places_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safeher -d safeher_places"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7.0
+    container_name: sp-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: safeher
+      MONGO_INITDB_ROOT_PASSWORD: safeher
+      MONGO_INITDB_DATABASE: safeher_ratings
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: sp-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -qv '\"status\":\"red\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: sp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: sp-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: sp-kafka
+    depends_on:
+      zookeeper:
+        condition: service_started
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ══════════════════════════════════════════════════════════════
+  # SPRING CLOUD INFRASTRUCTURE
+  # ══════════════════════════════════════════════════════════════
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: sp-eureka
+    ports:
+      - "8761:8761"
+    environment:
+      EUREKA_USERNAME: admin
+      EUREKA_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8761/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: sp-config
+    ports:
+      - "8888:8888"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      CONFIG_USERNAME: config
+      CONFIG_PASSWORD: config
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8888/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ══════════════════════════════════════════════════════════════
+  # MICROSERVICES
+  # ══════════════════════════════════════════════════════════════
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: sp-auth
+    ports:
+      - "8081:8081"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      postgres-auth:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      DB_HOST: postgres-auth
+      DB_USER: safeher
+      DB_PASSWORD: safeher
+      KAFKA_BOOTSTRAP: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: sp-users
+    ports:
+      - "8082:8082"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      postgres-users:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      DB_HOST: postgres-users
+      DB_USER: safeher
+      DB_PASSWORD: safeher
+      KAFKA_BOOTSTRAP: kafka:9092
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  place-service:
+    build:
+      context: ./place-service
+      dockerfile: Dockerfile
+    container_name: sp-places
+    ports:
+      - "8083:8083"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      postgres-places:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      DB_HOST: postgres-places
+      DB_USER: safeher
+      DB_PASSWORD: safeher
+      ES_URIS: http://elasticsearch:9200
+      KAFKA_BOOTSTRAP: kafka:9092
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  rating-service:
+    build:
+      context: ./rating-service
+      dockerfile: Dockerfile
+    container_name: sp-ratings
+    ports:
+      - "8084:8084"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      MONGO_URI: mongodb://safeher:safeher@mongodb:27017/safeher_ratings?authSource=admin
+      ES_URIS: http://elasticsearch:9200
+      KAFKA_BOOTSTRAP: kafka:9092
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8084/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: sp-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health | grep UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  pg_auth_data:
+  pg_users_data:
+  pg_places_data:
+  mongo_data:
+  es_data:
+  redis_data:
