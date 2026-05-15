@@ -1,0 +1,47 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+  security:
+    user:
+      name: ${EUREKA_USERNAME:admin}
+      password: ${EUREKA_PASSWORD:admin}
+
+eureka:
+  dashboard:
+    username: ${EUREKA_USERNAME:admin}
+    password: ${EUREKA_PASSWORD:admin}
+
+  instance:
+    hostname: localhost
+
+  client:
+    # This is the server – it does NOT register itself or fetch registry
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${EUREKA_USERNAME:admin}:${EUREKA_PASSWORD:admin}@localhost:8761/eureka/
+
+  server:
+    # Wait time before evicting unresponsive clients (lower for local dev)
+    eviction-interval-timer-in-ms: 5000
+    # Disable self-preservation in dev (set true in prod)
+    enable-self-preservation: ${EUREKA_SELF_PRESERVATION:false}
+    renewal-percent-threshold: 0.85
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN
+    com.safeher.eurekaserver: INFO
