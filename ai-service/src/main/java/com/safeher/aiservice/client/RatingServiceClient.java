@@ -23,7 +23,7 @@ public interface RatingServiceClient {
     @GetMapping("/internal/ratings/places/{placeId}/summary")
     PlaceSummary getPlaceSummary(@PathVariable UUID placeId);
 
-    @PatchMapping("/ratings/{id}/suppress")
+    @PatchMapping("/internal/ratings/{id}/suppress")
     void suppressRating(@PathVariable String id);
 
     record PagedRatings(List<RatingDto> content, int totalPages, long totalElements) {}
