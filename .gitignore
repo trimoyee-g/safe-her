@@ -78,3 +78,36 @@ jacoco.exec
 *.tmp
 *.temp
 *.swp
+
+# =========================
+# Frontend / UI
+# =========================
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite
+vite.svg
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Environment files
+frontend/.env
+safeher-ui/.env
