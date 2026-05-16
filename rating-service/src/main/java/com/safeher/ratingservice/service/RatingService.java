@@ -39,6 +39,13 @@ public interface RatingService {
 
     BigDecimal getAggregatedScore(UUID placeId);   // internal – called by Place Service Feign
 
+    // ── AI Moderation ─────────────────────────────────────────────────────────
+    void suppress(String ratingId);
+
+    void flag(String ratingId, String reason, double confidence);
+
+    PagedResponse<RatingResponse> getFlaggedReviews(int page, int size);
+
     // ── Engagement ────────────────────────────────────────────────────────────
     void markHelpful(String ratingId, UUID callerUserId);
 

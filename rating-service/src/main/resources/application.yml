@@ -60,6 +60,7 @@ app:
       rating-created: rating.created
       rating-updated: rating.updated
       rating-deleted: rating.deleted
+      ai-review-flagged: ai.review.flagged
 
   rating:
     max-per-user-per-place: 1        # one active rating per user per place; updates allowed

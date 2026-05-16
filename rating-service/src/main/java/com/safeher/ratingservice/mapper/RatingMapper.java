@@ -24,6 +24,10 @@ public interface RatingMapper {
     @Mapping(target = "reportedCount",   ignore = true)
     @Mapping(target = "reportedBy",      ignore = true)
     @Mapping(target = "active",          ignore = true)
+    @Mapping(target = "suppressed",      ignore = true)
+    @Mapping(target = "flagged",         ignore = true)
+    @Mapping(target = "flagReason",      ignore = true)
+    @Mapping(target = "flagConfidence",  ignore = true)
     @Mapping(target = "createdAt",       ignore = true)
     @Mapping(target = "updatedAt",       ignore = true)
     Rating toEntity(CreateRatingRequest request);
@@ -41,6 +45,10 @@ public interface RatingMapper {
     @Mapping(target = "reportedCount",   ignore = true)
     @Mapping(target = "reportedBy",      ignore = true)
     @Mapping(target = "active",          ignore = true)
+    @Mapping(target = "suppressed",      ignore = true)
+    @Mapping(target = "flagged",         ignore = true)
+    @Mapping(target = "flagReason",      ignore = true)
+    @Mapping(target = "flagConfidence",  ignore = true)
     @Mapping(target = "createdAt",       ignore = true)
     @Mapping(target = "updatedAt",       ignore = true)
     void updateEntity(UpdateRatingRequest request, @MappingTarget Rating rating);
@@ -62,8 +70,12 @@ public interface RatingMapper {
      * Public response (non-author/non-admin).
      * Masks userId and reportedCount.
      */
-    @Mapping(target = "userId",          ignore = true)
-    @Mapping(target = "reportedCount",   ignore = true)
+    @Mapping(target = "userId",           ignore = true)
+    @Mapping(target = "reportedCount",    ignore = true)
+    @Mapping(target = "suppressed",       ignore = true)
+    @Mapping(target = "flagged",          ignore = true)
+    @Mapping(target = "flagReason",       ignore = true)
+    @Mapping(target = "flagConfidence",   ignore = true)
     @Mapping(target = "markedHelpfulByMe", ignore = true)
     @Mapping(target = "authorDisplayName",
              expression = "java(rating.isAnonymous() ? \"Anonymous\" : rating.getAuthorDisplayName())")

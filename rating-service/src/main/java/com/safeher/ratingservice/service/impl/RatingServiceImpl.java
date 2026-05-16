@@ -227,6 +227,40 @@ public class RatingServiceImpl implements RatingService {
                 .orElse(BigDecimal.ZERO);
     }
 
+    // ── AI Moderation ─────────────────────────────────────────────────────────
+
+    @Override
+    public void suppress(String ratingId) {
+        Rating rating = ratingRepository.findById(ratingId)
+                .orElseThrow(() -> new RatingNotFoundException("Rating not found: " + ratingId));
+        rating.setActive(false);
+        rating.setSuppressed(true);
+        ratingRepository.save(rating);
+        searchRepository.deleteById(ratingId);
+        log.info("Rating [{}] auto-suppressed by AI moderation", ratingId);
+    }
+
+    @Override
+    public void flag(String ratingId, String reason, double confidence) {
+        Rating rating = ratingRepository.findById(ratingId)
+                .orElseThrow(() -> new RatingNotFoundException("Rating not found: " + ratingId));
+        rating.setFlagged(true);
+        rating.setFlagReason(reason);
+        rating.setFlagConfidence(confidence);
+        ratingRepository.save(rating);
+        log.info("Rating [{}] flagged for review: reason={} confidence={}", ratingId, reason, confidence);
+    }
+
+    @Override
+    public PagedResponse<RatingResponse> getFlaggedReviews(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Rating> result = ratingRepository.findByFlaggedTrueAndSuppressedFalseAndActiveTrue(pageable);
+        List<RatingResponse> content = result.getContent().stream()
+                .map(ratingMapper::toResponse)
+                .toList();
+        return toPagedResponse(content, result);
+    }
+
     // ── Engagement ────────────────────────────────────────────────────────────
 
     @Override

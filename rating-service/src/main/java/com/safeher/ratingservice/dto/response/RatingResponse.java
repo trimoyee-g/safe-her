@@ -33,6 +33,10 @@ public class RatingResponse {
     private int helpfulCount;
     private boolean markedHelpfulByMe;  // populated when caller is authenticated
     private int reportedCount;          // admin-only
+    private boolean suppressed;         // admin-only
+    private boolean flagged;            // admin-only
+    private String flagReason;          // admin-only
+    private double flagConfidence;      // admin-only
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }

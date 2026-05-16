@@ -23,6 +23,8 @@ public interface RatingRepository extends MongoRepository<Rating, String> {
 
     long countByPlaceIdAndActiveTrue(UUID placeId);
 
+    Page<Rating> findByFlaggedTrueAndSuppressedFalseAndActiveTrue(Pageable pageable);
+
     // ── Aggregation – compute avg score and total ratings per place ────────────
 
     @Aggregation(pipeline = {

@@ -1,6 +1,8 @@
 package com.safeher.ratingservice.controller;
 
+import com.safeher.ratingservice.dto.response.PagedResponse;
 import com.safeher.ratingservice.dto.response.PlaceRatingSummary;
+import com.safeher.ratingservice.dto.response.RatingResponse;
 import com.safeher.ratingservice.service.RatingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -27,5 +29,24 @@ public class InternalRatingController {
     @GetMapping("/places/{placeId}/summary")
     public PlaceRatingSummary getSummary(@PathVariable UUID placeId) {
         return ratingService.getSummaryForPlace(placeId);
+    }
+
+    @PatchMapping("/{id}/suppress")
+    public void suppress(@PathVariable String id) {
+        ratingService.suppress(id);
+    }
+
+    @PatchMapping("/{id}/flag")
+    public void flag(@PathVariable String id,
+                     @RequestParam String reason,
+                     @RequestParam double confidence) {
+        ratingService.flag(id, reason, confidence);
+    }
+
+    @GetMapping("/flagged")
+    public PagedResponse<RatingResponse> getFlagged(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ratingService.getFlaggedReviews(page, size);
     }
 }

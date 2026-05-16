@@ -85,6 +85,25 @@ public class Rating {
     @Builder.Default
     private List<String> reportedBy = new ArrayList<>();
 
+    // ── AI Moderation ─────────────────────────────────────────────────────────
+
+    /** True when auto-suppressed by the ReviewModerationAgent (active set to false). */
+    @Field("suppressed")
+    @Builder.Default
+    private boolean suppressed = false;
+
+    /** True when flagged for human review by an AI agent. */
+    @Field("flagged")
+    @Builder.Default
+    private boolean flagged = false;
+
+    @Field("flag_reason")
+    private String flagReason;
+
+    @Field("flag_confidence")
+    @Builder.Default
+    private double flagConfidence = 0.0;
+
     @CreatedDate
     @Field("created_at")
     private OffsetDateTime createdAt;
