@@ -82,4 +82,7 @@ public class PlaceDocument {
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private OffsetDateTime createdAt;
+
+    @Field(type = FieldType.Text, analyzer = "standard")
+    private String aiSummary;
 }

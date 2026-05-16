@@ -47,6 +47,7 @@ public class RatingAnomalyDetector {
     @Value("${app.kafka.topics.review-flagged}")                      private String flaggedTopic;
     @Value("${app.agents.anomaly-detector.velocity-window-minutes:60}") private int windowMinutes;
     @Value("${app.agents.anomaly-detector.velocity-threshold:15}")      private int velocityThreshold;
+    @Value("${app.ollama.models.anomaly}") private String model;
 
     private static final String VELOCITY_KEY = "ai:velocity:";
 
@@ -111,7 +112,7 @@ public class RatingAnomalyDetector {
                     .collect(Collectors.joining("\n"));
 
             String raw = ollamaClient.complete(SYSTEM_PROMPT,
-                    "Recent reviews batch for place " + placeId + ":\n" + batchText, 400);
+                    "Recent reviews batch for place " + placeId + ":\n" + batchText, 400, model);
 
             JsonNode result = objectMapper.readTree(extractJson(raw));
 

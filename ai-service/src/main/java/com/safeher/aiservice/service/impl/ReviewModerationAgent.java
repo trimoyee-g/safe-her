@@ -42,6 +42,7 @@ public class ReviewModerationAgent {
     @Value("${app.kafka.topics.review-flagged}")           private String flaggedTopic;
     @Value("${app.agents.moderation.auto-suppress-threshold:0.90}") private double autoSuppressThreshold;
     @Value("${app.agents.moderation.flag-threshold:0.65}")          private double flagThreshold;
+    @Value("${app.ollama.models.moderation}") private String model;
 
     private static final String SYSTEM_PROMPT = """
             You are a content moderation AI for safeher, a safety-rating platform where women
@@ -77,7 +78,7 @@ public class ReviewModerationAgent {
         String reviewText = buildReviewText(score, title, body, tags);
 
         try {
-            String raw = ollamaClient.complete(SYSTEM_PROMPT, reviewText, 256);
+            String raw = ollamaClient.complete(SYSTEM_PROMPT, reviewText, 256, model);
             JsonNode result = objectMapper.readTree(extractJson(raw));
 
             String classification = result.path("classification").asText("CLEAN");

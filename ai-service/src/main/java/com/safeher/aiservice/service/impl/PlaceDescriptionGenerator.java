@@ -2,8 +2,11 @@ package com.safeher.aiservice.service.impl;
 
 import com.safeher.aiservice.client.OllamaClient;
 import com.safeher.aiservice.client.PlaceServiceClient;
+import com.safeher.aiservice.event.PlaceDescriptionUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +26,10 @@ public class PlaceDescriptionGenerator {
 
     private final OllamaClient    ollamaClient;
     private final PlaceServiceClient placeServiceClient;
+    private final KafkaTemplate<String, Object> kafka;
+
+    @Value("${app.ollama.models.description}")              private String model;
+    @Value("${app.kafka.topics.place-description-updated}") private String descriptionTopic;
 
     private static final String SYSTEM_PROMPT = """
             You are a local knowledge assistant for safeher, a safety-rating platform.
@@ -51,12 +58,14 @@ public class PlaceDescriptionGenerator {
                     place.city()    != null ? place.city()    : "unknown",
                     place.country() != null ? place.country() : "unknown");
 
-            String description = ollamaClient.complete(SYSTEM_PROMPT, userMessage, 80).trim();
+            String description = ollamaClient.complete(SYSTEM_PROMPT, userMessage, 80, model).trim();
 
-            log.info("Generated description for place [{}]: {}", placeId, description);
+            kafka.send(descriptionTopic, placeId.toString(), PlaceDescriptionUpdatedEvent.builder()
+                    .placeId(placeId)
+                    .description(description)
+                    .build());
 
-            // In production, you'd call a dedicated PATCH endpoint on Place Service to set description
-            // placeServiceClient.updateDescription(placeId, description);
+            log.info("Generated description for place [{}]", placeId);
 
         } catch (Exception ex) {
             log.warn("Description generation failed for place [{}]: {}", placeId, ex.getMessage());
@@ -70,6 +79,14 @@ public class PlaceDescriptionGenerator {
                 place.name(), place.category(),
                 place.city()    != null ? place.city()    : "unknown",
                 place.country() != null ? place.country() : "unknown");
-        return ollamaClient.complete(SYSTEM_PROMPT, userMessage, 80).trim();
+        String description = ollamaClient.complete(SYSTEM_PROMPT, userMessage, 80, model).trim();
+
+        kafka.send(descriptionTopic, placeId.toString(), PlaceDescriptionUpdatedEvent.builder()
+                .placeId(placeId)
+                .description(description)
+                .build());
+
+        log.info("Generated description on-demand for place [{}]", placeId);
+        return description;
     }
 }

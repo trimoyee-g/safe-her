@@ -4,6 +4,7 @@ import com.safeher.aiservice.client.OllamaClient;
 import com.safeher.aiservice.client.PlaceServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +27,8 @@ public class SmartReviewAssistant {
 
     private final OllamaClient    ollamaClient;
     private final PlaceServiceClient placeServiceClient;
+
+    @Value("${app.ollama.models.assistant}") private String model;
 
     private static final String SYSTEM_PROMPT = """
             You are a helpful assistant on safeher, a women's safety platform.
@@ -59,7 +62,7 @@ public class SmartReviewAssistant {
                 partialBody != null && !partialBody.isBlank() ? partialBody : "(none yet)");
 
         try {
-            return ollamaClient.complete(SYSTEM_PROMPT, userMessage, 60).trim();
+            return ollamaClient.complete(SYSTEM_PROMPT, userMessage, 60, model).trim();
         } catch (Exception ex) {
             log.warn("SmartReviewAssistant failed for place [{}]: {}", placeId, ex.getMessage());
             return "What specific details would help someone feel confident about this place?";

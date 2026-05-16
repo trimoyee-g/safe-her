@@ -111,8 +111,15 @@ public class AppConfig {
     // ── HTTP client ───────────────────────────────────────────────────────────
 
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public RestTemplate restTemplate(
+            @Value("${app.ollama.timeout-seconds:60}") int timeoutSeconds
+    ) {
+        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+
+        factory.setConnectTimeout(10_000); // 10 sec
+        factory.setReadTimeout(timeoutSeconds * 1000);
+
+        return new RestTemplate(factory);
     }
 
     // ── Kafka producer ────────────────────────────────────────────────────────

@@ -12,7 +12,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -25,8 +24,7 @@ import java.util.stream.Collectors;
  * Reads up to 50 most recent reviews, asks Claude to synthesise a
  * 2–3 sentence plain-language safety summary.
  *
- * Result is pushed back to Place Service via Feign and broadcast
- * over Kafka so the frontend can update without a page reload.
+ * Result is broadcast over Kafka so place-service can update without a synchronous call.
  */
 @Service
 @RequiredArgsConstructor
@@ -42,6 +40,7 @@ public class SafetyNarrativeSummarizer {
     @Value("${app.kafka.topics.place-summary-updated}")          private String summaryTopic;
     @Value("${app.agents.summarizer.min-reviews-to-summarize:5}") private int minReviews;
     @Value("${app.agents.summarizer.regenerate-every-n-reviews:10}") private int regenerateEvery;
+    @Value("${app.ollama.models.summarization}") private String model;
 
     private static final String COUNTER_KEY = "ai:summary:counter:";
     private static final String SYSTEM_PROMPT = """
@@ -104,12 +103,8 @@ public class SafetyNarrativeSummarizer {
                     place.safetyScore(), reviews.size(),
                     reviewsText);
 
-            String summary = ollamaClient.complete(SYSTEM_PROMPT, userMessage, 200);
+            String summary = ollamaClient.complete(SYSTEM_PROMPT, userMessage, 200, model);
             summary = summary.trim();
-
-            // Push back to Place Service
-            placeServiceClient.updateAiSummary(placeId,
-                    new PlaceServiceClient.AiSummaryUpdate(summary, OffsetDateTime.now().toString()));
 
             // Broadcast via Kafka
             kafka.send(summaryTopic, placeId.toString(), PlaceSummaryUpdatedEvent.builder()

@@ -103,6 +103,14 @@ public class Place {
     @Builder.Default
     private int totalRatings = 0;
 
+    // ── AI-generated content (materialised via Kafka from AI Service) ─────────
+
+    @Column(name = "ai_summary", columnDefinition = "TEXT")
+    private String aiSummary;
+
+    @Column(name = "ai_summary_generated_at")
+    private OffsetDateTime aiSummaryGeneratedAt;
+
     // ── Moderation ────────────────────────────────────────────────────────────
 
     @Column(name = "is_active", nullable = false)

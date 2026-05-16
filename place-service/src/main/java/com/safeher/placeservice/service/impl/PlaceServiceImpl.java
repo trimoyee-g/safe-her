@@ -39,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -233,6 +234,29 @@ public class PlaceServiceImpl implements PlaceService {
     }
 
     // ── Internal / Kafka-driven ───────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public void updateDescription(UUID placeId, String description) {
+        placeRepository.updateDescription(placeId, description);
+        placeRepository.findActiveById(placeId).ifPresent(p -> {
+            p.setDescription(description);
+            indexAsync(p);
+        });
+        log.debug("Updated description for place [{}]", placeId);
+    }
+
+    @Override
+    @Transactional
+    public void updateAiSummary(UUID placeId, String summary, OffsetDateTime generatedAt) {
+        placeRepository.updateAiSummary(placeId, summary, generatedAt);
+        placeRepository.findActiveById(placeId).ifPresent(p -> {
+            p.setAiSummary(summary);
+            p.setAiSummaryGeneratedAt(generatedAt);
+            indexAsync(p);
+        });
+        log.debug("Updated AI summary for place [{}]", placeId);
+    }
 
     @Override
     @Transactional

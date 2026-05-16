@@ -10,6 +10,7 @@ import com.safeher.placeservice.dto.response.PlaceSummaryResponse;
 import com.safeher.placeservice.enums.PlaceCategory;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,6 +52,10 @@ public interface PlaceService {
     // ── Internal / Kafka-driven ───────────────────────────────────────────────
 
     void updateSafetyScore(UUID placeId, BigDecimal newScore, int totalRatings);
+
+    void updateAiSummary(UUID placeId, String summary, OffsetDateTime generatedAt);
+
+    void updateDescription(UUID placeId, String description);
 
     // ── Moderation ────────────────────────────────────────────────────────────
 

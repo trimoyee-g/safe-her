@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -94,6 +95,21 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
     void updateSafetyScore(@Param("id") UUID id,
                            @Param("newScore") BigDecimal newScore,
                            @Param("totalRatings") int totalRatings);
+
+    @Modifying
+    @Query("UPDATE Place p SET p.description = :description WHERE p.id = :id")
+    void updateDescription(@Param("id") UUID id, @Param("description") String description);
+
+    @Modifying
+    @Query("""
+            UPDATE Place p
+            SET p.aiSummary = :summary,
+                p.aiSummaryGeneratedAt = :generatedAt
+            WHERE p.id = :id
+            """)
+    void updateAiSummary(@Param("id") UUID id,
+                         @Param("summary") String summary,
+                         @Param("generatedAt") OffsetDateTime generatedAt);
 
     @Modifying
     @Query("UPDATE Place p SET p.reportedCount = p.reportedCount + 1 WHERE p.id = :id")

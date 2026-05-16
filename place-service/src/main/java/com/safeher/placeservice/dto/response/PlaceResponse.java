@@ -45,6 +45,9 @@ public class PlaceResponse {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 
+    private String aiSummary;
+    private OffsetDateTime aiSummaryGeneratedAt;
+
     /** Distance in metres from the search origin – populated on geo-search only */
     private Double distanceMeters;
 }

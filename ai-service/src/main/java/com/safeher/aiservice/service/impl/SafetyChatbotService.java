@@ -8,6 +8,7 @@ import com.safeher.aiservice.dto.request.ChatRequest;
 import com.safeher.aiservice.dto.response.ChatResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -40,6 +41,8 @@ public class SafetyChatbotService {
 
     private static final int MAX_HISTORY_TURNS = 10;
     private static final int CHATBOT_MAX_TOKENS = 512;
+
+    @Value("${app.ollama.models.chatbot}") private String model;
 
     private static final String SYSTEM_PROMPT = """
             You are SafeGuide, a friendly and knowledgeable safety assistant on safeher –
@@ -77,7 +80,7 @@ public class SafetyChatbotService {
         messages.add(Map.of("role", "user", "content", request.getMessage()));
 
         String response = ollamaClient.completeWithHistory(
-                systemWithContext, messages, CHATBOT_MAX_TOKENS);
+                systemWithContext, messages, CHATBOT_MAX_TOKENS, model);
 
         log.debug("Chatbot response for user [{}]: {} chars", callerUserId, response.length());
 

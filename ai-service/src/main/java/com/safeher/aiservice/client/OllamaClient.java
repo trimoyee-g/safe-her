@@ -19,17 +19,15 @@ import java.util.Map;
 /**
  * Ollama client – 100% free, runs locally via Docker.
  *
- * All 6 agents call the same complete() / completeWithHistory() methods.
- *
- * Recommended models (pick based on your RAM):
- *   llama3.2:3b   – 2 GB  – fast, good for classification tasks (agents 1,4)
- *   llama3.1:8b   – 5 GB  – better reasoning, good for summarisation (agents 2,5)
- *   mistral:7b    – 4 GB  – strong instruction-following, good all-rounder
- *   gemma2:9b     – 6 GB  – excellent for multilingual (Hindi, Bengali support)
- *   phi3:mini     – 2 GB  – very fast, lighter reasoning
- *
- * Ollama API is OpenAI-compatible at /api/chat.
- * Uses the "messages" format with system + user roles.
+ * Supports per-agent model routing:
+ *   Agent                 Model (configured in application.yml)
+ *   ─────────────────     ──────────────────────────────────────
+ *   Moderation            phi3:mini     – fast classification, low RAM
+ *   Anomaly detection     phi3:mini     – same: structured JSON output
+ *   Review assistant      phi3:mini     – short prompt, needs speed
+ *   Place description     phi3:mini     – simple generation task
+ *   Summarisation         llama3.1:8b  – needs reading comprehension
+ *   Chatbot               mistral:7b   – multi-turn, instruction following
  */
 @Component
 @Slf4j
@@ -39,70 +37,68 @@ public class OllamaClient {
     private final RestTemplate restTemplate;
 
     @Value("${app.ollama.base-url:http://localhost:11434}") private String baseUrl;
-    @Value("${app.ollama.model:llama3.2:3b}")              private String model;
-    @Value("${app.ollama.timeout-seconds:60}")             private int    timeoutSeconds;
+    @Value("${app.ollama.model:llama3.2:3b}")               private String defaultModel;
 
     private static final String CHAT_PATH = "/api/chat";
 
-    // ── Primary API ──────────────────────────────────────────────────────────
+    // ── Primary API ───────────────────────────────────────────────────────────
 
     /**
-     * Single-turn completion with a system prompt.
-     * Used by: ReviewModerationAgent, SafetyNarrativeSummarizer,
-     *          SmartReviewAssistant, RatingAnomalyDetector, PlaceDescriptionGenerator
+     * Single-turn, default model, default token limit.
+     * Convenience overload – agents that don't need model routing use this.
      */
     @CircuitBreaker(name = "ollama", fallbackMethod = "completeFallback")
     @Retry(name = "ollama")
     public String complete(String systemPrompt, String userMessage) {
-        return complete(systemPrompt, userMessage, 1024);
-    }
-
-    @CircuitBreaker(name = "ollama", fallbackMethod = "completeFallbackWithTokens")
-    @Retry(name = "ollama")
-    public String complete(String systemPrompt, String userMessage, int maxTokens) {
-        List<Map<String, String>> messages = List.of(
-                Map.of("role", "system",  "content", systemPrompt),
-                Map.of("role", "user",    "content", userMessage)
-        );
-        return chat(messages, maxTokens);
+        return chat(buildMessages(systemPrompt, userMessage), 1024, defaultModel);
     }
 
     /**
-     * Multi-turn completion with full conversation history.
-     * Used by: SafetyChatbotService
+     * Single-turn with explicit model and token limit.
+     * Used by all agents that specify their own model via application.yml.
      */
-    @CircuitBreaker(name = "ollama", fallbackMethod = "streamFallback")
+    @CircuitBreaker(name = "ollama", fallbackMethod = "completeFallbackFull")
+    @Retry(name = "ollama")
+    public String complete(String systemPrompt, String userMessage,
+                           int maxTokens, String model) {
+        return chat(buildMessages(systemPrompt, userMessage), maxTokens, model);
+    }
+
+    /**
+     * Multi-turn with explicit model and token limit.
+     * Used by SafetyChatbotService.
+     */
+    @CircuitBreaker(name = "ollama", fallbackMethod = "completeWithHistoryFallback")
     @Retry(name = "ollama")
     public String completeWithHistory(String systemPrompt,
                                       List<Map<String, String>> history,
-                                      int maxTokens) {
-        // Prepend system message
+                                      int maxTokens,
+                                      String model) {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));
         messages.addAll(history);
-        return chat(messages, maxTokens);
+        return chat(messages, maxTokens, model);
     }
 
-    // ── Internal ─────────────────────────────────────────────────────────────
+    // ── Internal ──────────────────────────────────────────────────────────────
 
-    private String chat(List<Map<String, String>> messages, int maxTokens) {
+    private String chat(List<Map<String, String>> messages, int maxTokens, String model) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> body = Map.of(
                 "model",    model,
                 "messages", messages,
-                "stream",   false,          // we want the full response at once
+                "stream",   false,   // RestTemplate reads a single response body – never stream
                 "options",  Map.of(
                         "num_predict", maxTokens,
-                        "temperature", 0.1,   // low temp → deterministic, good for classification
+                        "temperature", 0.1,  // low temp → deterministic, good for classification
                         "top_p",       0.9
                 )
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-        log.debug("Ollama request → model={} messages={}", model, messages.size());
+        log.debug("Ollama → model={} messages={} maxTokens={}", model, messages.size(), maxTokens);
 
         ResponseEntity<OllamaResponse> response = restTemplate.exchange(
                 baseUrl + CHAT_PATH,
@@ -112,33 +108,44 @@ public class OllamaClient {
         );
 
         if (response.getBody() == null || response.getBody().getMessage() == null) {
-            throw new IllegalStateException("Empty response from Ollama");
+            throw new IllegalStateException("Empty response from Ollama (model=" + model + ")");
         }
 
         String text = response.getBody().getMessage().getContent();
-        log.debug("Ollama response ({} chars)", text.length());
+        log.debug("Ollama ← {} chars (model={})", text.length(), model);
         return text;
     }
 
-    // ── Fallbacks (circuit open / all retries exhausted) ─────────────────────
+    private List<Map<String, String>> buildMessages(String systemPrompt, String userMessage) {
+        return List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                Map.of("role", "user",   "content", userMessage)
+        );
+    }
+
+    // ── Fallbacks ─────────────────────────────────────────────────────────────
+    // Signature must match the annotated method exactly (same params + Throwable appended)
 
     public String completeFallback(String system, String user, Throwable ex) {
-        log.error("Ollama circuit open or unavailable: {}", ex.getMessage());
-        return "[AI analysis temporarily unavailable – Ollama may be starting up]";
+        log.error("Ollama unavailable (default model): {}", ex.getMessage());
+        return "[AI analysis temporarily unavailable]";
     }
 
-    public String completeFallbackWithTokens(String system, String user, int tokens, Throwable ex) {
-        log.error("Ollama circuit open or unavailable: {}", ex.getMessage());
-        return "[AI analysis temporarily unavailable – Ollama may be starting up]";
+    public String completeFallbackFull(String system, String user,
+                                       int maxTokens, String model, Throwable ex) {
+        log.error("Ollama unavailable (model={}): {}", model, ex.getMessage());
+        return "[AI analysis temporarily unavailable]";
     }
 
-    public String streamFallback(String system, List<Map<String, String>> messages,
-                                  int tokens, Throwable ex) {
-        log.error("Ollama circuit open: {}", ex.getMessage());
+    public String completeWithHistoryFallback(String system,
+                                              List<Map<String, String>> history,
+                                              int maxTokens, String model,
+                                              Throwable ex) {
+        log.error("Ollama unavailable for chatbot (model={}): {}", model, ex.getMessage());
         return "I'm temporarily unavailable. Please try again in a moment.";
     }
 
-    // ── Response DTO ─────────────────────────────────────────────────────────
+    // ── Response DTO ──────────────────────────────────────────────────────────
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)

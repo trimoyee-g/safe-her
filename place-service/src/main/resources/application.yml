@@ -76,6 +76,8 @@ app:
       place-deleted: place.deleted
       place-score-updated: place.score.updated
       rating-created: rating.created      # consumed from Rating Service
+      ai-summary-updated: ai.place.summary.updated          # consumed from AI Service
+      place-description-updated: ai.place.description.updated  # consumed from AI Service
 
   external:
     google-places:
