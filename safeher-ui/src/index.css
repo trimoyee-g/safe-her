@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+  }
+
+  /* Leaflet z-index fix */
+  .leaflet-pane {
+    z-index: 1 !important;
+  }
+  .leaflet-top,
+  .leaflet-bottom {
+    z-index: 2 !important;
+  }
+  .leaflet-popup {
+    z-index: 3 !important;
+  }
+
+  /* Hide scrollbar on overflow-x-auto strips */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-400 hover:bg-brand-600 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+}
