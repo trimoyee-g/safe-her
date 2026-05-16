@@ -1,0 +1,71 @@
+# AI Service — SafeHer Platform
+
+Hosts all AI agents. Port **8085**.
+Powered by **Ollama** — runs fully locally, zero API cost, no keys needed.
+
+## Model recommendations
+
+| Model | RAM | Best for |
+|---|---|---|
+| `llama3.2:3b` | 2 GB | Fast classification (agents 1, 4) — default |
+| `llama3.1:8b` | 5 GB | Better reasoning, summaries (agents 2, 5) |
+| `mistral:7b` | 4 GB | Strong instruction-following, all-rounder |
+| `gemma2:9b` | 6 GB | Multilingual — Hindi, Bengali support |
+| `phi3:mini` | 2 GB | Fastest on CPU |
+
+## Quick start
+
+```bash
+docker-compose up -d ollama
+docker exec -it sp-ollama ollama pull llama3.2:3b
+docker-compose up -d ai-service
+```
+
+## Agents
+
+| # | Agent | Trigger | Pattern |
+|---|---|---|---|
+| 1 | Review Moderation | `rating.created` Kafka | Async classifier |
+| 2 | Safety Narrative Summarizer | `rating.created` every N reviews | Async RAG |
+| 3 | Smart Review Assistant | REST (frontend) | Sync writing prompt |
+| 4 | Rating Anomaly Detector | `rating.created` Kafka | Async two-stage |
+| 5 | Safety Chatbot | REST multi-turn | Sync conversational RAG |
+| 6 | Place Description Generator | `place.created` Kafka | Async description |
+
+## docker-compose additions
+
+```yaml
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sp-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  ai-service:
+    build: { context: ./ai-service, dockerfile: Dockerfile }
+    container_name: sp-ai
+    ports: ["8085:8085"]
+    depends_on:
+      config-server: { condition: service_healthy }
+      kafka:         { condition: service_healthy }
+      redis:         { condition: service_healthy }
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
+      EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.2:3b
+      KAFKA_BOOTSTRAP: kafka:9092
+      REDIS_HOST: redis
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+volumes:
+  ollama_data:
+```
+
+## No GPU? No problem
+
+Ollama runs on CPU — just slower. `llama3.2:3b` takes 3–8s on CPU.
+Async agents (1, 2, 4, 6) are unaffected by latency. The chatbot (Agent 5)
+will feel slow on CPU — disable it until you add a GPU.
