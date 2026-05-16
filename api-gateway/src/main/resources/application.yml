@@ -163,6 +163,42 @@ spring:
                 name: rating-service
                 fallbackUri: forward:/fallback/rating
 
+
+        # ── AI Service – public endpoints (place summary, health) ──────────────
+        - id: ai-service-public
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/v1/ai/health, /api/v1/ai/places/*/summary
+            - Method=GET,POST
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                key-resolver: "#{@ipKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: ai-service
+                fallbackUri: forward:/fallback/ai
+
+        # ── AI Service – authenticated (chat, review-assist, admin) ────────────
+        - id: ai-service-secured
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: ai-service
+                fallbackUri: forward:/fallback/ai
+
         # ── BLOCK all internal endpoints ────────────────────────────────────────
         # Any /api/v1/internal/** request from outside gets 403 immediately
         - id: block-internal
@@ -227,6 +263,12 @@ resilience4j:
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
+      ai-service:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        registerHealthIndicator: true
   timelimiter:
     instances:
       auth-service:
@@ -237,6 +279,8 @@ resilience4j:
         timeoutDuration: 8s
       rating-service:
         timeoutDuration: 5s
+      ai-service:
+        timeoutDuration: 30s    # AI calls can be slow – generous timeout
 
 management:
   endpoints:

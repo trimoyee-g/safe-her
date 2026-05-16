@@ -45,6 +45,12 @@ public class FallbackController {
         return fallback("Rating Service", exchange);
     }
 
+    @GetMapping("/ai")
+    public Mono<ResponseEntity<Map<String, Object>>> aiFallback(ServerWebExchange exchange) {
+        log.warn("Circuit open – AI Service unavailable");
+        return fallback("AI Service", exchange);
+    }
+
     private Mono<ResponseEntity<Map<String, Object>>> fallback(String service,
                                                                 ServerWebExchange exchange) {
         String traceId = exchange.getRequest().getHeaders()
