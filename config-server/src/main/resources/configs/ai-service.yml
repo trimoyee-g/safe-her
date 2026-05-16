@@ -1,0 +1,55 @@
+# configs/ai-service.yml
+server:
+  port: 8085
+
+app:
+  ollama:
+    base-url: ${OLLAMA_URL:http://localhost:11434}
+    model: ${OLLAMA_MODEL:llama3.2:3b}
+    timeout-seconds: 60
+
+  agents:
+    moderation:
+      enabled: true
+      auto-suppress-threshold: 0.90
+      flag-threshold: 0.65
+    summarizer:
+      enabled: true
+      min-reviews-to-summarize: 5
+      regenerate-every-n-reviews: 10
+    anomaly-detector:
+      enabled: true
+      velocity-window-minutes: 60
+      velocity-threshold: 15
+
+  kafka:
+    topics:
+      rating-created: rating.created
+      place-created: place.created
+      review-flagged: ai.review.flagged
+      place-summary-updated: ai.place.summary.updated
+
+  rate-limit:
+    chatbot-rpm: 10
+    assistant-rpm: 20
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      ollama:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        registerHealthIndicator: true
+  retry:
+    instances:
+      ollama:
+        maxAttempts: 3
+        waitDuration: 2s
+  ratelimiter:
+    instances:
+      ai-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0
