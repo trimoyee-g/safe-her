@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -85,7 +86,7 @@ class RatingServiceTest {
         when(ratingMapper.toEntity(req)).thenReturn(sampleRating);
         when(ratingRepository.save(sampleRating)).thenReturn(sampleRating);
         when(ratingMapper.toResponse(sampleRating)).thenReturn(sampleResponse);
-        when(ratingRepository.computeAggregation(placeId)).thenReturn(Optional.empty());
+        when(ratingRepository.computeAggregation(placeId)).thenReturn(List.of());
 
         RatingResponse result = ratingService.createRating(req, userId);
 
@@ -150,7 +151,7 @@ class RatingServiceTest {
     void deleteRating_ownerCanDelete() {
         when(ratingRepository.findById("mongo-id-1")).thenReturn(Optional.of(sampleRating));
         when(ratingRepository.save(any())).thenReturn(sampleRating);
-        when(ratingRepository.computeAggregation(placeId)).thenReturn(Optional.empty());
+        when(ratingRepository.computeAggregation(placeId)).thenReturn(List.of());
 
         assertThatCode(() -> ratingService.deleteRating("mongo-id-1", userId, false))
                 .doesNotThrowAnyException();
@@ -163,7 +164,7 @@ class RatingServiceTest {
         UUID adminId = UUID.randomUUID();
         when(ratingRepository.findById("mongo-id-1")).thenReturn(Optional.of(sampleRating));
         when(ratingRepository.save(any())).thenReturn(sampleRating);
-        when(ratingRepository.computeAggregation(placeId)).thenReturn(Optional.empty());
+        when(ratingRepository.computeAggregation(placeId)).thenReturn(List.of());
 
         assertThatCode(() -> ratingService.deleteRating("mongo-id-1", adminId, true))
                 .doesNotThrowAnyException();
