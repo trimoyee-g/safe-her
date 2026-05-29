@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -24,9 +24,9 @@ import java.util.UUID;
  */
 @Document(collection = "ratings")
 @CompoundIndexes({
-    @CompoundIndex(name = "idx_place_user",   def = "{'placeId': 1, 'userId': 1}", unique = true),
-    @CompoundIndex(name = "idx_place_active", def = "{'placeId': 1, 'active': 1}"),
-    @CompoundIndex(name = "idx_user_active",  def = "{'userId': 1,  'active': 1}")
+    @CompoundIndex(name = "idx_place_user",   def = "{'place_id': 1, 'user_id': 1}", unique = true),
+    @CompoundIndex(name = "idx_place_active", def = "{'place_id': 1, 'active': 1}"),
+    @CompoundIndex(name = "idx_user_active",  def = "{'user_id': 1,  'active': 1}")
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Rating {
@@ -106,9 +106,9 @@ public class Rating {
 
     @CreatedDate
     @Field("created_at")
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
     @Field("updated_at")
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 }

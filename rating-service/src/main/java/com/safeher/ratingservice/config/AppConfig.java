@@ -1,6 +1,8 @@
 package com.safeher.ratingservice.config;
 
 import com.safeher.ratingservice.security.filter.JwtAuthenticationFilter;
+import feign.RequestInterceptor;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -20,6 +22,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +59,23 @@ public class AppConfig {
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    // ── Feign: forward Authorization header to downstream services ────────────
+
+    @Bean
+    public RequestInterceptor feignAuthInterceptor() {
+        return template -> {
+            ServletRequestAttributes attrs =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest request = attrs.getRequest();
+                String auth = request.getHeader("Authorization");
+                if (StringUtils.hasText(auth)) {
+                    template.header("Authorization", auth);
+                }
+            }
+        };
     }
 
     // ── Kafka producer ────────────────────────────────────────────────────────

@@ -17,12 +17,12 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
     @Modifying
-    @Query("UPDATE RefreshToken t SET t.revoked = true, t.revokedAt = NOW() WHERE t.tokenHash = :hash")
-    void revokeByTokenHash(@Param("hash") String hash);
+    @Query("UPDATE RefreshToken t SET t.revoked = true, t.revokedAt = :revokedAt WHERE t.tokenHash = :hash")
+    void revokeByTokenHash(@Param("hash") String hash, @Param("revokedAt") OffsetDateTime revokedAt);
 
     @Modifying
-    @Query("UPDATE RefreshToken t SET t.revoked = true, t.revokedAt = NOW() WHERE t.authUser.id = :userId AND t.revoked = false")
-    void revokeAllForUser(@Param("userId") UUID userId);
+    @Query("UPDATE RefreshToken t SET t.revoked = true, t.revokedAt = :revokedAt WHERE t.authUser.id = :userId AND t.revoked = false")
+    void revokeAllForUser(@Param("userId") UUID userId, @Param("revokedAt") OffsetDateTime revokedAt);
 
     /** Cleanup job – delete expired tokens older than a threshold */
     @Modifying

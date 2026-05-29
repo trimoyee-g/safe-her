@@ -41,6 +41,11 @@ spring:
       properties:
         spring.json.trusted.packages: "com.safeher.*"
 
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
 eureka:
   client:
     service-url:

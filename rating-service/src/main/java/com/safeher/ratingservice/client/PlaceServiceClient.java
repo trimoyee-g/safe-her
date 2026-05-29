@@ -2,6 +2,7 @@ package com.safeher.ratingservice.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -20,6 +21,7 @@ public interface PlaceServiceClient {
     // ── Minimal DTO ───────────────────────────────────────────────────────────
     record PlaceInfo(UUID id, String name, boolean active) {}
 
+    @Component
     @Slf4j
     class Fallback implements PlaceServiceClient {
         @Override

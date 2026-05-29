@@ -7,11 +7,21 @@ import com.safeher.ratingservice.entity.document.RatingDocument;
 import com.safeher.ratingservice.entity.jpa.Rating;
 import org.mapstruct.*;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
 @Mapper(
     componentModel = "spring",
     nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
 public interface RatingMapper {
+
+    // ── Instant → OffsetDateTime (UTC) for response DTOs ──────────────────────
+
+    default OffsetDateTime toOffsetDateTime(Instant instant) {
+        return instant == null ? null : instant.atOffset(ZoneOffset.UTC);
+    }
 
     // ── Entity from request ────────────────────────────────────────────────────
 
@@ -60,6 +70,8 @@ public interface RatingMapper {
      * UserId and reportedCount included.
      */
     @Mapping(target = "markedHelpfulByMe", ignore = true)
+    @Mapping(target = "createdAt", expression = "java(toOffsetDateTime(rating.getCreatedAt()))")
+    @Mapping(target = "updatedAt", expression = "java(toOffsetDateTime(rating.getUpdatedAt()))")
     @Mapping(target = "authorDisplayName",
              expression = "java(rating.isAnonymous() ? \"Anonymous\" : rating.getAuthorDisplayName())")
     @Mapping(target = "authorAvatarUrl",
@@ -77,6 +89,8 @@ public interface RatingMapper {
     @Mapping(target = "flagReason",       ignore = true)
     @Mapping(target = "flagConfidence",   ignore = true)
     @Mapping(target = "markedHelpfulByMe", ignore = true)
+    @Mapping(target = "createdAt", expression = "java(toOffsetDateTime(rating.getCreatedAt()))")
+    @Mapping(target = "updatedAt", expression = "java(toOffsetDateTime(rating.getUpdatedAt()))")
     @Mapping(target = "authorDisplayName",
              expression = "java(rating.isAnonymous() ? \"Anonymous\" : rating.getAuthorDisplayName())")
     @Mapping(target = "authorAvatarUrl",

@@ -4,7 +4,8 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.util.List;
 
 @Document(indexName = "ratings")
 @Setting(settingPath = "elasticsearch/rating-settings.json")
@@ -35,7 +36,7 @@ public class RatingDocument {
     private String body;
 
     @Field(type = FieldType.Keyword)
-    private java.util.List<String> tags;
+    private List<String> tags;
 
     @Field(type = FieldType.Boolean)
     private boolean anonymous;
@@ -50,5 +51,5 @@ public class RatingDocument {
     private String authorDisplayName;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
 }

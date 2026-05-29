@@ -4,7 +4,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5433/safeher_places
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/safeher_places
     username: ${DB_USER:safeher}
     password: ${DB_PASSWORD:safeher}
     hikari:

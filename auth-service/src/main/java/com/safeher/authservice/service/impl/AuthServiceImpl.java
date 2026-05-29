@@ -171,7 +171,7 @@ public class AuthServiceImpl implements AuthService {
         AuthUser user = stored.getAuthUser();
 
         // Rotate: revoke old, issue new
-        refreshTokenRepository.revokeByTokenHash(hash);
+        refreshTokenRepository.revokeByTokenHash(hash, OffsetDateTime.now());
 
         String newAccess  = jwtService.generateAccessToken(user);
         String newRefresh = jwtService.generateRefreshToken(user);
@@ -193,14 +193,14 @@ public class AuthServiceImpl implements AuthService {
         }
         // Revoke refresh token
         if (StringUtils.hasText(refreshToken)) {
-            refreshTokenRepository.revokeByTokenHash(sha256(refreshToken));
+            refreshTokenRepository.revokeByTokenHash(sha256(refreshToken), OffsetDateTime.now());
         }
     }
 
     @Override
     @Transactional
     public void logoutAllDevices(UUID authUserId) {
-        refreshTokenRepository.revokeAllForUser(authUserId);
+        refreshTokenRepository.revokeAllForUser(authUserId, OffsetDateTime.now());
         log.info("Revoked all refresh tokens for user [{}]", authUserId);
     }
 
@@ -220,7 +220,7 @@ public class AuthServiceImpl implements AuthService {
         authUserRepository.save(user);
 
         // Revoke all refresh tokens – forces re-login on all devices
-        refreshTokenRepository.revokeAllForUser(authUserId);
+        refreshTokenRepository.revokeAllForUser(authUserId, OffsetDateTime.now());
 
         eventPublisher.publishPasswordChanged(
                 AuthPasswordChangedEvent.builder().authUserId(authUserId).build());
@@ -261,7 +261,7 @@ public class AuthServiceImpl implements AuthService {
         user.setResetTokenExpiry(null);
         authUserRepository.save(user);
 
-        refreshTokenRepository.revokeAllForUser(user.getId());
+        refreshTokenRepository.revokeAllForUser(user.getId(), OffsetDateTime.now());
         log.info("Password reset completed for user [{}]", user.getEmail());
     }
 
@@ -271,7 +271,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void deleteAccount(UUID authUserId) {
         authUserRepository.deactivate(authUserId);
-        refreshTokenRepository.revokeAllForUser(authUserId);
+        refreshTokenRepository.revokeAllForUser(authUserId, OffsetDateTime.now());
         eventPublisher.publishUserDeleted(
                 AuthUserDeletedEvent.builder().authUserId(authUserId).build());
         log.info("Account deactivated for authUserId=[{}]", authUserId);

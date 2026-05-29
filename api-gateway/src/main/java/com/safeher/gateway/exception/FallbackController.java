@@ -3,7 +3,6 @@ package com.safeher.gateway.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
@@ -21,31 +20,31 @@ import java.util.Map;
 @Slf4j
 public class FallbackController {
 
-    @GetMapping("/auth")
+    @RequestMapping("/auth")
     public Mono<ResponseEntity<Map<String, Object>>> authFallback(ServerWebExchange exchange) {
         log.warn("Circuit open – Auth Service unavailable");
         return fallback("Auth Service", exchange);
     }
 
-    @GetMapping("/user")
+    @RequestMapping("/user")
     public Mono<ResponseEntity<Map<String, Object>>> userFallback(ServerWebExchange exchange) {
         log.warn("Circuit open – User Service unavailable");
         return fallback("User Service", exchange);
     }
 
-    @GetMapping("/place")
+    @RequestMapping("/place")
     public Mono<ResponseEntity<Map<String, Object>>> placeFallback(ServerWebExchange exchange) {
         log.warn("Circuit open – Place Service unavailable");
         return fallback("Place Service", exchange);
     }
 
-    @GetMapping("/rating")
+    @RequestMapping("/rating")
     public Mono<ResponseEntity<Map<String, Object>>> ratingFallback(ServerWebExchange exchange) {
         log.warn("Circuit open – Rating Service unavailable");
         return fallback("Rating Service", exchange);
     }
 
-    @GetMapping("/ai")
+    @RequestMapping("/ai")
     public Mono<ResponseEntity<Map<String, Object>>> aiFallback(ServerWebExchange exchange) {
         log.warn("Circuit open – AI Service unavailable");
         return fallback("AI Service", exchange);

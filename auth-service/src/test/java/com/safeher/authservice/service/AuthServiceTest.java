@@ -190,6 +190,6 @@ class AuthServiceTest {
         authService.logout(access, refresh);
 
         verify(blacklistService).blacklist(eq(access), eq(86400000L));
-        verify(refreshTokenRepository).revokeByTokenHash(any());
+        verify(refreshTokenRepository).revokeByTokenHash(any(), any());
     }
 }

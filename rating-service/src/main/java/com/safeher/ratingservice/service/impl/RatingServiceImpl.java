@@ -79,8 +79,12 @@ public class RatingServiceImpl implements RatingService {
         indexAsync(saved);
         userServiceClient.incrementReviewCount(callerUserId);
 
-        // Recompute and publish aggregated score
-        publishScoreEvent(saved.getPlaceId(), saved.getId(), saved.getScore(), false, false);
+        // Publish score event — wrapped so a Kafka outage never fails an already-saved review
+        try {
+            publishScoreEvent(saved.getPlaceId(), saved.getId(), saved.getScore(), false, false);
+        } catch (Exception ex) {
+            log.error("Score event publish failed for rating [{}]: {}", saved.getId(), ex.getMessage());
+        }
 
         return ratingMapper.toResponse(saved);
     }
@@ -108,7 +112,11 @@ public class RatingServiceImpl implements RatingService {
         indexAsync(saved);
 
         if (oldScore != saved.getScore()) {
-            publishScoreEvent(saved.getPlaceId(), saved.getId(), saved.getScore(), false, false);
+            try {
+                publishScoreEvent(saved.getPlaceId(), saved.getId(), saved.getScore(), false, true);
+            } catch (Exception ex) {
+                log.error("Score event publish failed for rating [{}]: {}", saved.getId(), ex.getMessage());
+            }
         }
 
         log.info("Updated rating [id={}]", id);
@@ -126,7 +134,11 @@ public class RatingServiceImpl implements RatingService {
         ratingRepository.save(rating);
         searchRepository.deleteById(id);
 
-        publishScoreEvent(rating.getPlaceId(), id, rating.getScore(), true, false);
+        try {
+            publishScoreEvent(rating.getPlaceId(), id, rating.getScore(), true, false);
+        } catch (Exception ex) {
+            log.error("Score event publish failed on delete for rating [{}]: {}", id, ex.getMessage());
+        }
         log.info("Soft-deleted rating [id={}]", id);
     }
 
@@ -198,12 +210,12 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public PlaceRatingSummary getSummaryForPlace(UUID placeId) {
-        var aggOpt = ratingRepository.computeAggregation(placeId);
+        var aggOpt  = ratingRepository.computeAggregation(placeId).stream().findFirst();
         var distList = ratingRepository.computeDistribution(placeId);
 
         Map<Integer, Integer> dist = distList.stream()
                 .collect(Collectors.toMap(
-                        RatingRepository.ScoreDistribution::get_id,
+                        RatingRepository.ScoreDistribution::getId,
                         RatingRepository.ScoreDistribution::getCount));
 
         BigDecimal avg = aggOpt.map(a -> BigDecimal.valueOf(a.getAvgScore())
@@ -222,7 +234,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public BigDecimal getAggregatedScore(UUID placeId) {
-        return ratingRepository.computeAggregation(placeId)
+        return ratingRepository.computeAggregation(placeId).stream().findFirst()
                 .map(a -> BigDecimal.valueOf(a.getAvgScore()).setScale(2, RoundingMode.HALF_UP))
                 .orElse(BigDecimal.ZERO);
     }
@@ -341,7 +353,7 @@ public class RatingServiceImpl implements RatingService {
 
     private void publishScoreEvent(UUID placeId, String ratingId, int score,
                                    boolean isDelete, boolean isUpdate) {
-        var aggOpt = ratingRepository.computeAggregation(placeId);
+        var aggOpt = ratingRepository.computeAggregation(placeId).stream().findFirst();
         double avg   = aggOpt.map(RatingRepository.ScoreAggregation::getAvgScore).orElse(0.0);
         int    total = aggOpt.map(RatingRepository.ScoreAggregation::getTotalRatings).orElse(0);
 

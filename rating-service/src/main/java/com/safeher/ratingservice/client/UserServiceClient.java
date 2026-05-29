@@ -2,6 +2,7 @@ package com.safeher.ratingservice.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ public interface UserServiceClient {
 
     record UserInfo(UUID id, String username, String displayName, String avatarUrl) {}
 
+    @Component
     @Slf4j
     class Fallback implements UserServiceClient {
         @Override

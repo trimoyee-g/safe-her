@@ -1,12 +1,16 @@
 package com.safeher.ratingservice.repository.jpa;
 
 import com.safeher.ratingservice.entity.jpa.Rating;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,26 +35,29 @@ public interface RatingRepository extends MongoRepository<Rating, String> {
         "{ $match: { 'place_id': ?0, 'active': true } }",
         "{ $group: { _id: '$place_id', avgScore: { $avg: '$score' }, totalRatings: { $sum: 1 } } }"
     })
-    Optional<ScoreAggregation> computeAggregation(UUID placeId);
+    List<ScoreAggregation> computeAggregation(UUID placeId);
 
     // ── Score distribution (for the ratings breakdown widget) ─────────────────
 
     @Aggregation(pipeline = {
         "{ $match: { 'place_id': ?0, 'active': true } }",
         "{ $group: { _id: '$score', count: { $sum: 1 } } }",
-        "{ $sort: { '_id': 1 } }"
+        "{ $project: { id: '$_id', count: 1, _id: 0 } }",
+        "{ $sort: { 'id': 1 } }"
     })
     java.util.List<ScoreDistribution> computeDistribution(UUID placeId);
 
-    // ── Interfaces for aggregation projections ─────────────────────────────────
+    // ── DTOs for aggregation results ───────────────────────────────────────────
 
-    interface ScoreAggregation {
-        double getAvgScore();
-        int getTotalRatings();
+    @Data @NoArgsConstructor @AllArgsConstructor
+    class ScoreAggregation {
+        private double avgScore;
+        private int    totalRatings;
     }
 
-    interface ScoreDistribution {
-        int get_id();     // the score value (1-5)
-        int getCount();
+    @Data @NoArgsConstructor @AllArgsConstructor
+    class ScoreDistribution {
+        private int id;     // score bucket (1-5); renamed from _id via $project in the aggregation above
+        private int count;
     }
 }

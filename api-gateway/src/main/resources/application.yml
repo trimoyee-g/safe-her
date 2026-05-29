@@ -59,7 +59,6 @@ spring:
                 name: auth-service
                 fallbackUri: forward:/fallback/auth
             - AddRequestHeader=X-Gateway-Source, safeher-gateway
-            - AddResponseHeader=X-Response-Time, ${now}
 
         # ── User Service – public profile reads (no JWT required) ───────────────
         - id: user-service-public
@@ -84,7 +83,7 @@ spring:
           predicates:
             - Path=/api/v1/users/**
           filters:
-            - JwtAuthentication          # custom filter – validates JWT, adds headers
+            - JwtAuthenticationFilter          # custom filter – validates JWT, adds headers
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 30
@@ -118,7 +117,7 @@ spring:
           predicates:
             - Path=/api/v1/places/**
           filters:
-            - JwtAuthentication
+            - JwtAuthenticationFilter
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 20
@@ -152,7 +151,7 @@ spring:
           predicates:
             - Path=/api/v1/ratings/**
           filters:
-            - JwtAuthentication
+            - JwtAuthenticationFilter
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 10
@@ -187,7 +186,7 @@ spring:
           predicates:
             - Path=/api/v1/ai/**
           filters:
-            - JwtAuthentication
+            - JwtAuthenticationFilter
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 5
@@ -272,7 +271,7 @@ resilience4j:
   timelimiter:
     instances:
       auth-service:
-        timeoutDuration: 5s
+        timeoutDuration: 15s
       user-service:
         timeoutDuration: 5s
       place-service:
