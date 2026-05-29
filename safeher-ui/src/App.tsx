@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { HomePage } from '@/pages/HomePage'
+import { LandingPage } from '@/pages/LandingPage'
 import { PlaceDetailPage } from '@/pages/PlaceDetailPage'
 import { SearchPage } from '@/pages/SearchPage'
 import { WriteReviewPage } from '@/pages/WriteReviewPage'
@@ -10,6 +11,12 @@ import { AddPlacePage } from '@/pages/AddPlacePage'
 import { ChatbotPage } from '@/pages/ChatbotPage'
 import { LoginPage, RegisterPage } from '@/pages/AuthPages'
 import { Button } from '@/components/ui'
+import { useAuthStore } from '@/store/auth.store'
+
+function RootRoute() {
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  return isAuthenticated ? <HomePage /> : <LandingPage />
+}
 
 export default function App() {
   return (
@@ -18,18 +25,19 @@ export default function App() {
         <Navbar />
         <main className="flex-1">
           <Routes>
-            <Route path="/"           element={<HomePage />} />
-            <Route path="/place/:id"  element={<PlaceDetailPage />} />
-            <Route path="/search"     element={<SearchPage />} />
-            <Route path="/login"      element={<LoginPage />} />
-            <Route path="/register"   element={<RegisterPage />} />
-            <Route path="/chat"       element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
-            <Route path="/chat/:placeId" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
+            <Route path="/"                 element={<RootRoute />} />
+            <Route path="/map"              element={<HomePage />} />
+            <Route path="/place/:id"        element={<PlaceDetailPage />} />
+            <Route path="/search"           element={<SearchPage />} />
+            <Route path="/login"            element={<LoginPage />} />
+            <Route path="/register"         element={<RegisterPage />} />
+            <Route path="/chat"             element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
+            <Route path="/chat/:placeId"    element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
             <Route path="/place/:id/review" element={<ProtectedRoute><WriteReviewPage /></ProtectedRoute>} />
-            <Route path="/add-place"  element={<ProtectedRoute><AddPlacePage /></ProtectedRoute>} />
-            <Route path="/profile"    element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/profile/reviews" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/settings"   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/add-place"        element={<ProtectedRoute><AddPlacePage /></ProtectedRoute>} />
+            <Route path="/profile"          element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/reviews"  element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/settings"         element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="*" element={
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
