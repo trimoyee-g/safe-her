@@ -1,12 +1,15 @@
-FROM eclipse-temurin:21-jre-alpine
+FROM python:3.12-slim
 WORKDIR /app
-RUN addgroup -S safeher && adduser -S safeher -G safeher
-COPY target/ai-service-*.jar app.jar
-RUN chown safeher:safeher app.jar
+
+RUN useradd -r -s /bin/false safeher
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/ app/
+
+RUN chown -R safeher:safeher /app
 USER safeher
+
 EXPOSE 8085
-ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=75.0", \
-  "-Djava.security.egd=file:/dev/./urandom", \
-  "-jar", "app.jar"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8085"]

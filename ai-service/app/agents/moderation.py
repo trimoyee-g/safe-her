@@ -1,0 +1,110 @@
+"""Agent 1: Review Moderation
+
+Classifies review content as CLEAN / SPAM / ABUSE / FAKE / COORDINATED.
+Uses LangChain's PydanticOutputParser for reliable structured output.
+Above auto-suppress-threshold → suppress + publish ai.review.flagged.
+Above flag-threshold         → publish ai.review.flagged for human review.
+"""
+import logging
+from typing import List, Optional
+from uuid import UUID
+
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama import ChatOllama
+from pydantic import BaseModel, Field
+
+from app.config import get_settings
+from app.clients import rating_client
+from app.kafka import producer
+from app.models.events import ReviewFlaggedEvent
+
+logger = logging.getLogger(__name__)
+
+_SYSTEM = """You are a content moderation AI for safeher, a safety-rating platform where women
+and marginalised communities share experiences about public places.
+
+Classify the review as one of:
+- CLEAN: genuine, relevant, appropriate review
+- SPAM: low effort, irrelevant, or promotional content
+- ABUSE: harassment, hate speech, threats, or discriminatory language
+- FAKE: score clearly does not match the review sentiment; implausible claims
+- COORDINATED: appears to be part of a brigading attempt
+
+Discussing safety concerns — street harassment, poor lighting, feeling unsafe — is ALWAYS CLEAN.
+
+{format_instructions}"""
+
+
+class _ModerationResult(BaseModel):
+    classification: str = Field(description="One of: CLEAN, SPAM, ABUSE, FAKE, COORDINATED")
+    confidence: float = Field(ge=0.0, le=1.0)
+    reason: str = Field(description="One sentence explanation")
+
+
+async def moderate(
+    rating_id: str,
+    place_id: UUID,
+    user_id: Optional[UUID],
+    score: int,
+    title: Optional[str],
+    body: Optional[str],
+    tags: Optional[List[str]],
+) -> None:
+    if not (body or title):
+        logger.debug(f"Review [{rating_id}] has no text – skipping moderation")
+        return
+
+    settings = get_settings()
+    parser = PydanticOutputParser(pydantic_object=_ModerationResult)
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", _SYSTEM),
+        ("human", "{review_text}"),
+    ]).partial(format_instructions=parser.get_format_instructions())
+
+    llm = ChatOllama(
+        model=settings.ollama_model_moderation,
+        base_url=settings.ollama_url,
+        num_predict=256,
+        temperature=0.1,
+    )
+    chain = prompt | llm | parser
+
+    review_text = _build_review_text(score, title, body, tags)
+    try:
+        result: _ModerationResult = await chain.ainvoke({"review_text": review_text})
+        logger.info(f"Moderation [{rating_id}] → {result.classification} ({result.confidence:.2f})")
+
+        if result.classification == "CLEAN":
+            return
+
+        auto_suppressed = result.confidence >= settings.moderation_auto_suppress_threshold
+        if result.confidence >= settings.moderation_flag_threshold:
+            if auto_suppressed:
+                await rating_client.suppress_rating(rating_id)
+                logger.warning(f"Auto-suppressed [{rating_id}] reason={result.reason}")
+
+            event = ReviewFlaggedEvent(
+                ratingId=rating_id,
+                placeId=place_id,
+                userId=user_id,
+                reason=result.classification,
+                confidence=result.confidence,
+                autoSuppressed=auto_suppressed,
+            )
+            await producer.send(settings.kafka_topic_review_flagged, rating_id, event)
+
+    except Exception as e:
+        logger.error(f"Moderation failed for rating [{rating_id}]: {e}")
+
+
+def _build_review_text(score, title, body, tags) -> str:
+    parts = [f"Safety score given: {score}/5"]
+    if title:
+        parts.append(f"Title: {title}")
+    if body:
+        parts.append(f"Review: {body}")
+    if tags:
+        parts.append(f"Tags: {', '.join(tags)}")
+    return "\n".join(parts)

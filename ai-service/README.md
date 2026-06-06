@@ -1,7 +1,9 @@
 # AI Service — SafeHer Platform
 
 Hosts all AI agents. Port **8085**.
-Powered by **Ollama** — runs fully locally, zero API cost, no keys needed.
+Built with **Python / FastAPI + LangChain + LangGraph**, powered by **Ollama** — runs fully locally, zero API cost, no keys needed.
+
+Health endpoint: `GET /api/v1/ai/health`
 
 ## Model recommendations
 
@@ -48,16 +50,16 @@ docker-compose up -d ai-service
     container_name: sp-ai
     ports: ["8085:8085"]
     depends_on:
-      config-server: { condition: service_healthy }
+      eureka-server: { condition: service_healthy }
       kafka:         { condition: service_healthy }
       redis:         { condition: service_healthy }
+      ollama:        { condition: service_started }
     environment:
-      SPRING_CONFIG_IMPORT: configserver:http://config:config@config-server:8888
       EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: llama3.2:3b
       KAFKA_BOOTSTRAP: kafka:9092
       REDIS_HOST: redis
+      REDIS_PORT: 6379
       JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
 
 volumes:
