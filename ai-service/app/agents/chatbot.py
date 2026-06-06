@@ -26,6 +26,7 @@ from app.config import get_settings
 from app.clients import place_client, rating_client
 from app.models.requests import ChatMessage
 from app.models.responses import ChatResponse
+from app import vector_store
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,9 @@ async def chat(
     place_ids: Optional[List[UUID]],
     caller_user_id: Optional[UUID],
 ) -> ChatResponse:
+    if not place_ids:
+        place_ids = await vector_store.search_places(message)
+
     place_context = await _build_place_context(place_ids)
 
     history = history or []

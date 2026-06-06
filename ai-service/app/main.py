@@ -11,6 +11,7 @@ from app.kafka import producer as kafka_producer
 from app.routers import ai as ai_router
 from app.agents import anomaly_detector, summarizer
 from app.models.events import PlaceCreatedEvent, RatingCreatedEvent
+from app import vector_store
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -41,6 +42,7 @@ async def _on_kafka_event(topic: str, data: dict) -> None:
         ))
         asyncio.create_task(summarizer.maybe_regenerate(event.placeId, event.totalRatings))
         asyncio.create_task(anomaly_detector.check_velocity(event.ratingId, event.placeId))
+        asyncio.create_task(vector_store.enqueue(event))
 
     elif topic == settings.kafka_topic_place_created:
         try:
@@ -52,12 +54,20 @@ async def _on_kafka_event(topic: str, data: dict) -> None:
 
 
 _consumer_task: asyncio.Task | None = None
+_flush_task: asyncio.Task | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _consumer_task
+    global _consumer_task, _flush_task
     settings = get_settings()
+
+    # Vector store
+    try:
+        await vector_store.setup()
+        _flush_task = asyncio.create_task(vector_store.periodic_flush_loop())
+    except Exception as e:
+        logger.warning("Vector store setup failed (discovery queries will be unavailable): %s", e)
 
     # Redis
     redis_client = aioredis.Redis(
@@ -97,12 +107,13 @@ async def lifespan(app: FastAPI):
     yield
 
     # Graceful shutdown
-    if _consumer_task:
-        _consumer_task.cancel()
-        try:
-            await _consumer_task
-        except asyncio.CancelledError:
-            pass
+    for task in (_consumer_task, _flush_task):
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
     await kafka_producer.stop()
     await redis_client.aclose()

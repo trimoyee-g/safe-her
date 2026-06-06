@@ -35,6 +35,9 @@ class Settings(BaseSettings):
 
     eureka_uri: str = "http://admin:admin@localhost:8761/eureka"
 
+    ollama_model_embed: str = "nomic-embed-text"
+    vector_db_url: str = "postgresql+psycopg://safeher:safeher@localhost:5432/safeher_vectors"
+
     moderation_auto_suppress_threshold: float = 0.90
     moderation_flag_threshold: float = 0.65
     summarizer_min_reviews: int = 5

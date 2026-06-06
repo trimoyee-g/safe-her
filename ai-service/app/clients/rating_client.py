@@ -26,6 +26,20 @@ async def get_ratings_by_place(
         return {"content": [], "totalPages": 0, "totalElements": 0}
 
 
+async def get_rating(rating_id: str) -> dict:
+    settings = get_settings()
+    url = f"{settings.rating_service_url}/api/v1/ratings/{rating_id}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            body = resp.json()
+            return body.get("data", body)
+    except Exception as e:
+        logger.warning(f"RatingService unavailable for rating={rating_id}: {e}")
+        return {}
+
+
 async def suppress_rating(rating_id: str) -> None:
     settings = get_settings()
     url = f"{settings.rating_service_url}/api/v1/internal/ratings/{rating_id}/suppress"
