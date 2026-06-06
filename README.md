@@ -82,12 +82,12 @@ Unauthenticated users can read everything. Writing reviews, adding places, and u
                          │          Elasticsearch 8           │
                          │   places index · ratings index     │
                          └────────────────────────────────────┘
-                         ┌──────────┐       ┌──────────────────┐
-                         │  Redis   │       │  Eureka :8761    │
-                         │ (tokens  │       │  Config  :8888   │
-                         │  + rate  │       │  (service disco  │
-                         │  limits) │       │  + central conf) │
-                         └──────────┘       └──────────────────┘
+       ┌──────────┐       ┌──────────┐       ┌──────────────────┐
+       │pgvector  │       │  Redis   │       │  Eureka :8761    │
+       │(review   │       │ (tokens  │       │  Config  :8888   │
+       │embeddings│       │  + rate  │       │  (service disco  │
+       │ :5435)   │       │  limits) │       │  + central conf) │
+       └──────────┘       └──────────┘       └──────────────────┘
 ```
 
 ---
@@ -101,7 +101,7 @@ Unauthenticated users can read everything. Writing reviews, adding places, and u
 | **User Service** | 8082 | User profiles, avatar, location, roles | PostgreSQL |
 | **Place Service** | 8083 | Place CRUD, PostGIS geo-search, keyword search, safety score materialisation | PostgreSQL + PostGIS |
 | **Rating Service** | 8084 | Reviews (1–5), anonymous posting, helpful votes, score aggregation | MongoDB |
-| **AI Service** | 8085 | 6 AI agents — moderation, summarisation, chatbot, anomaly detection (Python/FastAPI + LangChain + LangGraph) | Redis |
+| **AI Service** | 8085 | 6 AI agents — moderation, summarisation, chatbot, anomaly detection (Python/FastAPI + LangChain + LangGraph) | Redis · pgvector |
 | **Eureka Server** | 8761 | Service discovery | — |
 | **Config Server** | 8888 | Centralised configuration (native filesystem backend) | — |
 
@@ -139,6 +139,8 @@ Unauthenticated users can read everything. Writing reviews, adding places, and u
 | Language | Python 3.12 |
 | Framework | FastAPI 0.115 + Uvicorn |
 | AI orchestration | LangChain 0.3 · LangGraph 0.2 · LangChain-Ollama |
+| Vector store | pgvector (PostgreSQL 16) via langchain-postgres |
+| Embeddings | Ollama `nomic-embed-text` (local, no API key) |
 | Kafka client | aiokafka |
 | HTTP client | httpx (async) |
 | Service discovery | py-eureka-client (registers as `AI-SERVICE`) |
@@ -178,7 +180,7 @@ All inter-service communication for non-request-path events goes through Kafka.
 | `place.updated` | Place | — | Place edited |
 | `place.deleted` | Place | — | Soft delete broadcast |
 | `place.score.updated` | Place | — | Safety score recalculated |
-| `rating.created` | Rating | Place, AI | Updates materialised score · triggers moderation + summarisation + anomaly check |
+| `rating.created` | Rating | Place, AI | Updates materialised score · triggers moderation + summarisation + anomaly check + vector ingestion |
 | `rating.updated` | Rating | Place | Score change → recalculate |
 | `rating.deleted` | Rating | Place | Removed rating → recalculate |
 | `ai.review.flagged` | AI | Admin dashboard | Review flagged for abuse / fake / coordinated |
@@ -196,7 +198,7 @@ The AI Service runs 6 agents powered by **Ollama** (free, local, no API key):
 | 2 | **Safety Narrative Summarizer** | Every 10th new review | Reads up to 50 reviews and generates a 2–3 sentence plain-language safety summary, stored on the place |
 | 3 | **Smart Review Assistant** | REST call from frontend | Returns a one-sentence writing prompt as the user fills in the review form, based on their score and selected tags |
 | 4 | **Rating Anomaly Detector** | `rating.created` Kafka | Two-stage: Redis velocity window (15+ ratings/hr triggers investigation) → LLM analyses the batch for coordinated manipulation |
-| 5 | **Safety Chatbot** | REST (multi-turn) | Conversational RAG — fetches live place + review data and answers natural language safety questions |
+| 5 | **Safety Chatbot** | REST (multi-turn) | Dual-mode RAG: vectorless (live API fetch) when specific places are referenced; vector search (pgvector + `nomic-embed-text`) for open discovery queries like "which metro stations are safe at night?" |
 | 6 | **Place Description Generator** | `place.created` Kafka | Auto-drafts a factual 2-sentence description for new places that have none |
 
 **Default model:** `llama3.2:3b` (2 GB RAM). Swap to `llama3.1:8b` or `mistral:7b` for better reasoning on larger hardware. `gemma2:9b` recommended for Hindi/Bengali multilingual support.
@@ -306,8 +308,8 @@ docker-compose build
 ### 3. Start infrastructure first
 
 ```bash
-# Start databases, Kafka, Redis, Elasticsearch
-docker-compose up -d postgres-auth postgres-users postgres-places mongodb elasticsearch redis zookeeper kafka
+# Start databases, Kafka, Redis, Elasticsearch, pgvector
+docker-compose up -d postgres-auth postgres-users postgres-places postgres-vector mongodb elasticsearch redis zookeeper kafka
 ```
 
 ### 4. Start Spring Cloud infrastructure
@@ -335,8 +337,10 @@ docker-compose up -d api-gateway
 
 ```bash
 docker-compose up -d ollama
-# Pull the default model (one-time download, ~2 GB)
+# Inference model (~2 GB, one-time)
 docker exec -it sp-ollama ollama pull llama3.2:3b
+# Embedding model for vector search (~274 MB, one-time)
+docker exec -it sp-ollama ollama pull nomic-embed-text
 docker-compose up -d ai-service
 ```
 
@@ -371,6 +375,7 @@ All services read from the Config Server. The key shared variables are:
 | `EUREKA_URI` | `http://admin:admin@eureka-server:8761/eureka` | Eureka endpoint |
 | `OLLAMA_URL` | `http://ollama:11434` | Ollama base URL |
 | `OLLAMA_MODEL` | `llama3.2:3b` | LLM model — set in ai-service `config.py` |
+| `VECTOR_DB_URL` | `postgresql+psycopg://safeher:safeher@postgres-vector:5432/safeher_vectors` | pgvector connection (ai-service only) |
 | `GOOGLE_PLACES_API_KEY` | _(empty)_ | Optional — only needed for place seeding |
 
 For production, override these via your orchestrator (Kubernetes secrets, AWS Parameter Store, etc).
@@ -400,14 +405,15 @@ safeher/
 ├── user-service/               # Users (port 8082) — PostgreSQL
 ├── place-service/              # Places (port 8083) — PostgreSQL + PostGIS + Elasticsearch
 ├── rating-service/             # Ratings (port 8084) — MongoDB + Elasticsearch
-├── ai-service/                 # AI agents (port 8085) — Python/FastAPI + LangChain + Ollama + Redis
+├── ai-service/                 # AI agents (port 8085) — Python/FastAPI + LangChain + Ollama + Redis + pgvector
 │   └── app/
 │       ├── agents/             # 6 LangChain / LangGraph agents
 │       ├── clients/            # Async HTTP clients (place-service, rating-service)
 │       ├── kafka/              # aiokafka consumer + producer
 │       ├── middleware/         # JWT auth middleware
 │       ├── models/             # Pydantic request / response / event models
-│       └── routers/            # FastAPI route handlers
+│       ├── routers/            # FastAPI route handlers
+│       └── vector_store.py     # pgvector setup, batch ingestion (size 50), semantic search
 │
 └── safeher-ui/                 # React frontend (port 3000)
     └── src/
@@ -436,6 +442,10 @@ safeher/
 **Ollama over cloud LLMs** — all AI inference runs locally via Ollama. No API keys, no per-call cost, no data sent externally. Models run on the same server as the rest of the stack.
 
 **Python for the AI service** — the AI service is written in Python (FastAPI + LangChain + LangGraph) rather than Java to take full advantage of the LangChain/LangGraph ecosystem. It registers with Eureka as `AI-SERVICE` so the Spring Cloud Gateway can route to it exactly like any other service.
+
+**Dual-mode chatbot retrieval** — the Safety Chatbot uses two retrieval strategies depending on the request. When the frontend passes specific `placeIds`, it fetches live reviews directly from rating-service (vectorless, always fresh). For open discovery queries with no place context, it embeds the user's message with `nomic-embed-text` and does a semantic similarity search across all ingested reviews in pgvector, returning the top-5 matching places to build context from.
+
+**Batched vector ingestion** — review embeddings are written to pgvector in batches of 50, not one at a time. Each `rating.created` Kafka event enqueues the review; when the buffer fills, all 50 fetches (rating + place metadata) run concurrently in one `asyncio.gather`, then a single `aadd_documents` call embeds and inserts the batch. A 20-minute periodic flush drains any partial batch so reviews never stall indefinitely.
 
 ---
 
