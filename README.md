@@ -11,6 +11,8 @@ and when.
 [![Java](https://img.shields.io/badge/Java-17-orange?style=flat-square&logo=openjdk)](https://openjdk.org/projects/jdk/17/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.4-green?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.1-green?style=flat-square&logo=spring)](https://spring.io/projects/spring-cloud)
+[![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)](https://react.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
@@ -99,7 +101,7 @@ Unauthenticated users can read everything. Writing reviews, adding places, and u
 | **User Service** | 8082 | User profiles, avatar, location, roles | PostgreSQL |
 | **Place Service** | 8083 | Place CRUD, PostGIS geo-search, keyword search, safety score materialisation | PostgreSQL + PostGIS |
 | **Rating Service** | 8084 | Reviews (1–5), anonymous posting, helpful votes, score aggregation | MongoDB |
-| **AI Service** | 8085 | 6 AI agents — moderation, summarisation, chatbot, anomaly detection | Redis |
+| **AI Service** | 8085 | 6 AI agents — moderation, summarisation, chatbot, anomaly detection (Python/FastAPI + LangChain + LangGraph) | Redis |
 | **Eureka Server** | 8761 | Service discovery | — |
 | **Config Server** | 8888 | Centralised configuration (native filesystem backend) | — |
 
@@ -129,6 +131,18 @@ Unauthenticated users can read everything. Writing reviews, adding places, and u
 | Token blacklist + rate limiting | Redis 7 |
 | AI / LLM | Ollama (local) — default model `llama3.2:3b` |
 | Utilities | Lombok · Jackson |
+
+### AI Service (Python)
+
+| Concern | Technology |
+|---|---|
+| Language | Python 3.12 |
+| Framework | FastAPI 0.115 + Uvicorn |
+| AI orchestration | LangChain 0.3 · LangGraph 0.2 · LangChain-Ollama |
+| Kafka client | aiokafka |
+| HTTP client | httpx (async) |
+| Service discovery | py-eureka-client (registers as `AI-SERVICE`) |
+| Cache | redis[asyncio] |
 
 ### Frontend
 
@@ -356,7 +370,7 @@ All services read from the Config Server. The key shared variables are:
 | `REDIS_PORT` | `6379` | Redis port |
 | `EUREKA_URI` | `http://admin:admin@eureka-server:8761/eureka` | Eureka endpoint |
 | `OLLAMA_URL` | `http://ollama:11434` | Ollama base URL |
-| `OLLAMA_MODEL` | `llama3.2:3b` | LLM model to use |
+| `OLLAMA_MODEL` | `llama3.2:3b` | LLM model — set in ai-service `config.py` |
 | `GOOGLE_PLACES_API_KEY` | _(empty)_ | Optional — only needed for place seeding |
 
 For production, override these via your orchestrator (Kubernetes secrets, AWS Parameter Store, etc).
@@ -386,7 +400,14 @@ safeher/
 ├── user-service/               # Users (port 8082) — PostgreSQL
 ├── place-service/              # Places (port 8083) — PostgreSQL + PostGIS + Elasticsearch
 ├── rating-service/             # Ratings (port 8084) — MongoDB + Elasticsearch
-├── ai-service/                 # AI agents (port 8085) — Ollama + Redis
+├── ai-service/                 # AI agents (port 8085) — Python/FastAPI + LangChain + Ollama + Redis
+│   └── app/
+│       ├── agents/             # 6 LangChain / LangGraph agents
+│       ├── clients/            # Async HTTP clients (place-service, rating-service)
+│       ├── kafka/              # aiokafka consumer + producer
+│       ├── middleware/         # JWT auth middleware
+│       ├── models/             # Pydantic request / response / event models
+│       └── routers/            # FastAPI route handlers
 │
 └── safeher-ui/                 # React frontend (port 3000)
     └── src/
@@ -413,6 +434,8 @@ safeher/
 **PostGIS over Elasticsearch for geo-search** — `ST_DWithin` on a geography column gives true metre-based radius search with a GIST index. Elasticsearch handles keyword/text search separately. The two are not merged.
 
 **Ollama over cloud LLMs** — all AI inference runs locally via Ollama. No API keys, no per-call cost, no data sent externally. Models run on the same server as the rest of the stack.
+
+**Python for the AI service** — the AI service is written in Python (FastAPI + LangChain + LangGraph) rather than Java to take full advantage of the LangChain/LangGraph ecosystem. It registers with Eureka as `AI-SERVICE` so the Spring Cloud Gateway can route to it exactly like any other service.
 
 ---
 
