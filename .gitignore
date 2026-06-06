@@ -80,6 +80,28 @@ jacoco.exec
 *.swp
 
 # =========================
+# Python / FastAPI (ai-service)
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+venv/
+.venv/
+env/
+.env/
+pip-wheel-metadata/
+*.pth
+
+# =========================
 # Frontend / UI
 # =========================
 
