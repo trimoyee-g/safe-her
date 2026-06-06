@@ -140,8 +140,26 @@ services:
       retries: 5
       start_period: 30s
 
+  postgres-vector:
+    image: pgvector/pgvector:pg16
+    container_name: sp-postgres-vector
+    environment:
+      POSTGRES_DB: safeher_vectors
+      POSTGRES_USER: safeher
+      POSTGRES_PASSWORD: safeher
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg_vector_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safeher -d safeher_vectors"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Local LLM runtime for AI agents – free, no API key needed
   # One-time setup: docker exec -it sp-ollama ollama pull llama3.2:3b
+  # Vector embeddings: docker exec -it sp-ollama ollama pull nomic-embed-text
   ollama:
     image: ollama/ollama:latest
     container_name: sp-ollama
@@ -345,6 +363,8 @@ services:
         condition: service_healthy
       ollama:
         condition: service_started
+      postgres-vector:
+        condition: service_healthy
     environment:
       EUREKA_URI: http://admin:admin@eureka-server:8761/eureka
       OLLAMA_URL: http://ollama:11434
@@ -352,6 +372,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      VECTOR_DB_URL: postgresql+psycopg://safeher:safeher@postgres-vector:5432/safeher_vectors
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8085/api/v1/ai/health | grep -q 'OK\\|running'"]
       interval: 15s
@@ -394,3 +415,4 @@ volumes:
   es_data:
   redis_data:
   ollama_data:
+  pg_vector_data:
