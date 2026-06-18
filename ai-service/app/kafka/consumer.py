@@ -20,6 +20,7 @@ async def start(
         bootstrap_servers=settings.kafka_bootstrap,
         group_id=settings.kafka_group_id,
         auto_offset_reset="earliest",
+        enable_auto_commit=False,
         value_deserializer=lambda v: json.loads(v.decode("utf-8")),
     )
     await consumer.start()
@@ -32,6 +33,10 @@ async def start(
                     await handler(msg.topic, msg.value)
                 except Exception as e:
                     logger.error(f"Error handling message from {msg.topic}: {e}")
+                finally:
+                    # Always commit so a poison-pill message doesn't stall the consumer.
+                    # A production system would route failures to a DLQ before committing.
+                    await consumer.commit()
         finally:
             await consumer.stop()
             logger.info("Kafka consumer stopped")

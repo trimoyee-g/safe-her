@@ -7,6 +7,7 @@ Two-stage detection:
   Confirmed coordination → flag all suspicious reviews via Kafka.
 """
 import logging
+from functools import lru_cache
 from typing import List
 from uuid import UUID
 
@@ -37,6 +38,17 @@ Determine whether the batch shows signs of coordinated manipulation:
 {format_instructions}
 
 Be conservative — only flag when clearly evident. False positives harm genuine users."""
+
+@lru_cache(maxsize=1)
+def _get_llm() -> ChatOllama:
+    settings = get_settings()
+    return ChatOllama(
+        model=settings.ollama_model_anomaly,
+        base_url=settings.ollama_url,
+        num_predict=400,
+        temperature=0.1,
+    )
+
 
 _redis: aioredis.Redis | None = None
 
@@ -88,17 +100,23 @@ async def _analyze(place_id: UUID) -> None:
             ("human", "Recent reviews for place {place_id}:\n{batch_text}"),
         ]).partial(format_instructions=parser.get_format_instructions())
 
-        llm = ChatOllama(
-            model=settings.ollama_model_anomaly,
-            base_url=settings.ollama_url,
-            num_predict=400,
-            temperature=0.1,
-        )
-        chain = prompt | llm | parser
-        result: _AnomalyResult = await chain.ainvoke({
-            "place_id": str(place_id),
-            "batch_text": batch_text,
-        })
+        chain = prompt | _get_llm() | parser
+        result: _AnomalyResult | None = None
+        for attempt in range(2):
+            try:
+                result = await chain.ainvoke({
+                    "place_id": str(place_id),
+                    "batch_text": batch_text,
+                })
+                break
+            except Exception as e:
+                if attempt == 0:
+                    logger.warning(f"Anomaly parse failed (retrying) [{place_id}]: {e}")
+                else:
+                    logger.error(f"Anomaly detection parse failed after 2 attempts [{place_id}]: {e}")
+
+        if result is None:
+            return
 
         if not result.coordinated or result.confidence < 0.70:
             logger.debug(f"Anomaly [{place_id}]: NOT coordinated ({result.confidence:.2f})")

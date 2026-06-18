@@ -9,7 +9,7 @@ from app.config import get_settings
 from app.kafka import consumer as kafka_consumer
 from app.kafka import producer as kafka_producer
 from app.routers import ai as ai_router
-from app.agents import anomaly_detector, summarizer
+from app.agents import anomaly_detector, chatbot, summarizer
 from app.models.events import PlaceCreatedEvent, RatingCreatedEvent
 from app import vector_store
 
@@ -78,6 +78,8 @@ async def lifespan(app: FastAPI):
     )
     summarizer.set_redis(redis_client)
     anomaly_detector.set_redis(redis_client)
+    chatbot.set_redis(redis_client)
+    app.state.redis = redis_client
     logger.info("Redis client configured")
 
     # Kafka producer

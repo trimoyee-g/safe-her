@@ -5,6 +5,7 @@ Reads up to 50 recent reviews, synthesises a 2-3 sentence plain-language
 safety summary, then broadcasts it via Kafka so place-service can update.
 """
 import logging
+from functools import lru_cache
 from uuid import UUID
 
 import redis.asyncio as aioredis
@@ -30,6 +31,17 @@ Given a collection of user reviews about a specific place, write a concise
 3. Notes any significant safety concerns if present
 
 Be specific. Output the summary text only. No preamble. Maximum 80 words."""
+
+@lru_cache(maxsize=1)
+def _get_llm() -> ChatOllama:
+    settings = get_settings()
+    return ChatOllama(
+        model=settings.ollama_model_summarization,
+        base_url=settings.ollama_url,
+        num_predict=200,
+        temperature=0.1,
+    )
+
 
 _redis: aioredis.Redis | None = None
 
@@ -73,16 +85,10 @@ async def generate_and_store(place_id: UUID) -> str | None:
             f"Reviews:\n{reviews_text}"
         )
 
-        llm = ChatOllama(
-            model=settings.ollama_model_summarization,
-            base_url=settings.ollama_url,
-            num_predict=200,
-            temperature=0.1,
-        )
         chain = ChatPromptTemplate.from_messages([
             ("system", _SYSTEM),
             ("human", "{user_message}"),
-        ]) | llm
+        ]) | _get_llm()
 
         result = await chain.ainvoke({"user_message": user_message})
         summary = result.content.strip()

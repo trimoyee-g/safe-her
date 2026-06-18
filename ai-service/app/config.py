@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     redis_password: str = ""
 
-    jwt_secret: str = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    jwt_secret: str | None = None
 
     place_service_url: str = "http://place-service:8083"
     rating_service_url: str = "http://rating-service:8084"

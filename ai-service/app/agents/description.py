@@ -5,6 +5,7 @@ Generates a 2-sentence factual description of the place and broadcasts it
 via Kafka so place-service can persist it.
 """
 import logging
+from functools import lru_cache
 from uuid import UUID
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -16,6 +17,18 @@ from app.kafka import producer
 from app.models.events import PlaceDescriptionUpdatedEvent
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _get_llm() -> ChatOllama:
+    settings = get_settings()
+    return ChatOllama(
+        model=settings.ollama_model_description,
+        base_url=settings.ollama_url,
+        num_predict=80,
+        temperature=0.2,
+    )
+
 
 _SYSTEM = """You are a local knowledge assistant for safeher, a safety-rating platform.
 
@@ -45,23 +58,16 @@ async def generate_on_demand(place_id: UUID) -> str:
 
 
 async def _generate(place: dict) -> str:
-    settings = get_settings()
     user_message = (
         f"Place name: {place.get('name')}\n"
         f"Category: {place.get('category', 'OTHER')}\n"
         f"City: {place.get('city', 'unknown')}\n"
         f"Country: {place.get('country', 'unknown')}"
     )
-    llm = ChatOllama(
-        model=settings.ollama_model_description,
-        base_url=settings.ollama_url,
-        num_predict=80,
-        temperature=0.2,
-    )
     chain = ChatPromptTemplate.from_messages([
         ("system", _SYSTEM),
         ("human", "{user_message}"),
-    ]) | llm
+    ]) | _get_llm()
     result = await chain.ainvoke({"user_message": user_message})
     return result.content.strip()
 

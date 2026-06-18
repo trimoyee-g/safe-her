@@ -6,6 +6,7 @@ Above auto-suppress-threshold → suppress + publish ai.review.flagged.
 Above flag-threshold         → publish ai.review.flagged for human review.
 """
 import logging
+from functools import lru_cache
 from typing import List, Optional
 from uuid import UUID
 
@@ -36,6 +37,17 @@ Discussing safety concerns — street harassment, poor lighting, feeling unsafe 
 {format_instructions}"""
 
 
+@lru_cache(maxsize=1)
+def _get_llm() -> ChatOllama:
+    settings = get_settings()
+    return ChatOllama(
+        model=settings.ollama_model_moderation,
+        base_url=settings.ollama_url,
+        num_predict=256,
+        temperature=0.1,
+    )
+
+
 class _ModerationResult(BaseModel):
     classification: str = Field(description="One of: CLEAN, SPAM, ABUSE, FAKE, COORDINATED")
     confidence: float = Field(ge=0.0, le=1.0)
@@ -52,10 +64,17 @@ async def moderate(
     tags: Optional[List[str]],
 ) -> None:
     if not (body or title):
-        logger.debug(f"Review [{rating_id}] has no text – skipping moderation")
-        return
+        # Called from Kafka: event carries no text, so fetch it from rating-service.
+        rating = await rating_client.get_rating(rating_id)
+        body = (rating.get("body") or "").strip() or None
+        title = (rating.get("title") or "").strip() or None
+        if tags is None:
+            tags = rating.get("tags")
+        if not (body or title):
+            logger.debug(f"Review [{rating_id}] has no text – skipping moderation")
+            return
 
-    settings = get_settings()
+    settings = get_settings()  # needed for thresholds below
     parser = PydanticOutputParser(pydantic_object=_ModerationResult)
 
     prompt = ChatPromptTemplate.from_messages([
@@ -63,40 +82,46 @@ async def moderate(
         ("human", "{review_text}"),
     ]).partial(format_instructions=parser.get_format_instructions())
 
-    llm = ChatOllama(
-        model=settings.ollama_model_moderation,
-        base_url=settings.ollama_url,
-        num_predict=256,
-        temperature=0.1,
-    )
-    chain = prompt | llm | parser
+    chain = prompt | _get_llm() | parser
 
     review_text = _build_review_text(score, title, body, tags)
-    try:
-        result: _ModerationResult = await chain.ainvoke({"review_text": review_text})
-        logger.info(f"Moderation [{rating_id}] → {result.classification} ({result.confidence:.2f})")
+    result: _ModerationResult | None = None
+    for attempt in range(2):
+        try:
+            result = await chain.ainvoke({"review_text": review_text})
+            break
+        except Exception as e:
+            if attempt == 0:
+                logger.warning(f"Moderation parse failed (retrying) [{rating_id}]: {e}")
+            else:
+                logger.error(f"Moderation failed after 2 attempts [{rating_id}]: {e}")
 
-        if result.classification == "CLEAN":
-            return
+    if result is None:
+        return
 
-        auto_suppressed = result.confidence >= settings.moderation_auto_suppress_threshold
-        if result.confidence >= settings.moderation_flag_threshold:
-            if auto_suppressed:
+    logger.info(f"Moderation [{rating_id}] → {result.classification} ({result.confidence:.2f})")
+
+    if result.classification == "CLEAN":
+        return
+
+    auto_suppressed = result.confidence >= settings.moderation_auto_suppress_threshold
+    if result.confidence >= settings.moderation_flag_threshold:
+        if auto_suppressed:
+            try:
                 await rating_client.suppress_rating(rating_id)
                 logger.warning(f"Auto-suppressed [{rating_id}] reason={result.reason}")
+            except Exception as e:
+                logger.error(f"Failed to suppress rating [{rating_id}]: {e}")
 
-            event = ReviewFlaggedEvent(
-                ratingId=rating_id,
-                placeId=place_id,
-                userId=user_id,
-                reason=result.classification,
-                confidence=result.confidence,
-                autoSuppressed=auto_suppressed,
-            )
-            await producer.send(settings.kafka_topic_review_flagged, rating_id, event)
-
-    except Exception as e:
-        logger.error(f"Moderation failed for rating [{rating_id}]: {e}")
+        event = ReviewFlaggedEvent(
+            ratingId=rating_id,
+            placeId=place_id,
+            userId=user_id,
+            reason=result.classification,
+            confidence=result.confidence,
+            autoSuppressed=auto_suppressed,
+        )
+        await producer.send(settings.kafka_topic_review_flagged, rating_id, event)
 
 
 def _build_review_text(score, title, body, tags) -> str:

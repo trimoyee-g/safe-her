@@ -5,6 +5,7 @@ Given the user's partial review state (score + tags), returns a 1-sentence
 writing prompt to help them write a more useful safety review.
 """
 import logging
+from functools import lru_cache
 from typing import List, Optional
 from uuid import UUID
 
@@ -15,6 +16,18 @@ from app.config import get_settings
 from app.clients import place_client
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _get_llm() -> ChatOllama:
+    settings = get_settings()
+    return ChatOllama(
+        model=settings.ollama_model_assistant,
+        base_url=settings.ollama_url,
+        num_predict=60,
+        temperature=0.3,
+    )
+
 
 _SYSTEM = """You are a helpful assistant on safeher, a women's safety platform.
 Give users a short, warm, specific writing prompt (1 sentence, max 20 words) that
@@ -31,7 +44,6 @@ async def get_writing_prompt(
     selected_tags: Optional[List[str]],
     partial_body: Optional[str],
 ) -> str:
-    settings = get_settings()
     place = await place_client.get_place(place_id)
 
     user_message = (
@@ -41,16 +53,10 @@ async def get_writing_prompt(
         f"Partial review text: {partial_body or '(none yet)'}"
     )
 
-    llm = ChatOllama(
-        model=settings.ollama_model_assistant,
-        base_url=settings.ollama_url,
-        num_predict=60,
-        temperature=0.3,
-    )
     chain = ChatPromptTemplate.from_messages([
         ("system", _SYSTEM),
         ("human", "{user_message}"),
-    ]) | llm
+    ]) | _get_llm()
 
     try:
         result = await chain.ainvoke({"user_message": user_message})
