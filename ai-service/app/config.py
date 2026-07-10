@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     anomaly_velocity_window_minutes: int = 60
     anomaly_velocity_threshold: int = 15
 
+    # Web Research Agent — cold-start bridge (see agents/web_research.py)
+    web_search_enabled: bool = True
+    web_search_max_results: int = 5
+    web_search_timeout_s: float = 8.0
+    # Below this many first-party reviews across the referenced places,
+    # the synthesis agent leans on web research and lowers its confidence label.
+    chatbot_first_party_confidence_floor: int = 3
+
 
 @lru_cache
 def get_settings() -> Settings:

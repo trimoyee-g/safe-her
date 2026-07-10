@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import Header, HTTPException
 
 
-def require_authenticated(x_auth_user_id: Optional[str] = Header(None)) -> UUID:
+def require_authenticated(x_auth_user_id: Optional[str] = Header(None, alias="X-Auth-UserId")) -> UUID:
     """FastAPI dependency — extracts caller identity from gateway-forwarded header."""
     if not x_auth_user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -14,7 +14,7 @@ def require_authenticated(x_auth_user_id: Optional[str] = Header(None)) -> UUID:
         raise HTTPException(status_code=401, detail="Invalid user ID in token")
 
 
-def get_caller_user_id(x_auth_user_id: Optional[str] = Header(None)) -> Optional[UUID]:
+def get_caller_user_id(x_auth_user_id: Optional[str] = Header(None, alias="X-Auth-UserId")) -> Optional[UUID]:
     if not x_auth_user_id:
         return None
     try:
