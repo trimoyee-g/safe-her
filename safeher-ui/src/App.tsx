@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { HomePage } from '@/pages/HomePage'
 import { LandingPage } from '@/pages/LandingPage'
 import { PlaceDetailPage } from '@/pages/PlaceDetailPage'
 import { SearchPage } from '@/pages/SearchPage'
@@ -15,18 +14,17 @@ import { useAuthStore } from '@/store/auth.store'
 
 function RootRoute() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  return isAuthenticated ? <HomePage /> : <LandingPage />
+  return isAuthenticated ? <ChatbotPage /> : <LandingPage />
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-gray-950">
         <Navbar />
         <main className="flex-1">
           <Routes>
             <Route path="/"                 element={<RootRoute />} />
-            <Route path="/map"              element={<HomePage />} />
             <Route path="/place/:id"        element={<PlaceDetailPage />} />
             <Route path="/search"           element={<SearchPage />} />
             <Route path="/login"            element={<LoginPage />} />

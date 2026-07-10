@@ -18,13 +18,13 @@ export function ScoreDistributionBar({ summary }: ScoreDistributionBarProps) {
         return (
           <div key={score} className="flex items-center gap-2">
             <span className="text-xs text-gray-500 w-3 text-right">{score}</span>
-            <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div className="flex-1 bg-gray-800 rounded-full h-2 overflow-hidden">
               <div
                 className={clsx('h-2 rounded-full transition-all', BAR_COLORS[score])}
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="text-xs text-gray-400 w-5 text-right">{count}</span>
+            <span className="text-xs text-gray-500 w-5 text-right">{count}</span>
           </div>
         )
       })}

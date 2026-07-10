@@ -296,9 +296,22 @@ export interface ChatRequest {
   history?: ChatMessage[]
 }
 
+export type SourceKind = 'review' | 'web'
+
+export interface ChatSource {
+  kind: SourceKind
+  label: string
+  url?: string
+  placeId?: string
+}
+
+export type ChatConfidence = 'high' | 'medium' | 'low' | 'no_data'
+
 export interface ChatResponse {
   message: string
   suggestedPlaceIds?: string[]
+  sources: ChatSource[]
+  confidence: ChatConfidence
 }
 
 export interface ReviewAssistRequest {

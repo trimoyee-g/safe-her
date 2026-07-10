@@ -41,13 +41,13 @@ export function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-6 h-6 text-brand-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to your SafeHer account</p>
+          <h1 className="text-xl font-semibold text-gray-100">Welcome back</h1>
+          <p className="text-sm text-gray-400 mt-1">Sign in to your SafeHer account</p>
         </div>
 
         <form onSubmit={handleSubmit(d => mutate(d))} className="flex flex-col gap-4">
@@ -68,14 +68,14 @@ export function LoginPage() {
               error={errors.password?.message}
             />
             <div className="flex justify-end mt-1">
-              <Link to="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700">
+              <Link to="/forgot-password" className="text-xs text-brand-300 hover:text-brand-100">
                 Forgot password?
               </Link>
             </div>
           </div>
 
           {errMsg && (
-            <p className="text-sm text-red-600 text-center">{errMsg}</p>
+            <p className="text-sm text-red-400 text-center">{errMsg}</p>
           )}
 
           <Button type="submit" loading={isPending} fullWidth size="lg">
@@ -83,17 +83,17 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <div className="mt-4 border-t border-gray-100 pt-4 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="mt-4 border-t border-gray-800 pt-4 text-center">
+          <p className="text-sm text-gray-400">
             No account?{' '}
-            <Link to="/register" className="text-brand-600 font-medium hover:text-brand-700">
+            <Link to="/register" className="text-brand-300 font-medium hover:text-brand-100">
               Register
             </Link>
           </p>
         </div>
 
         <div className="mt-3 text-center">
-          <Link to="/" className="text-xs text-gray-400 hover:text-gray-600">
+          <Link to="/" className="text-xs text-gray-500 hover:text-gray-300">
             Browse as guest →
           </Link>
         </div>
@@ -140,13 +140,13 @@ export function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-6 h-6 text-brand-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">Join SafeHer</h1>
-          <p className="text-sm text-gray-500 mt-1">Help make communities safer for everyone</p>
+          <h1 className="text-xl font-semibold text-gray-100">Join SafeHer</h1>
+          <p className="text-sm text-gray-400 mt-1">Help make communities safer for everyone</p>
         </div>
 
         <form onSubmit={handleSubmit(d => mutate(d))} className="flex flex-col gap-4">
@@ -162,17 +162,17 @@ export function RegisterPage() {
           <Input label="City (optional)" placeholder="Kolkata"
             {...register('city')} error={errors.city?.message} />
 
-          {errMsg && <p className="text-sm text-red-600 text-center">{errMsg}</p>}
+          {errMsg && <p className="text-sm text-red-400 text-center">{errMsg}</p>}
 
           <Button type="submit" loading={isPending} fullWidth size="lg">
             Create account
           </Button>
         </form>
 
-        <div className="mt-4 border-t border-gray-100 pt-4 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="mt-4 border-t border-gray-800 pt-4 text-center">
+          <p className="text-sm text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-brand-600 font-medium hover:text-brand-700">Sign in</Link>
+            <Link to="/login" className="text-brand-300 font-medium hover:text-brand-100">Sign in</Link>
           </p>
         </div>
       </div>

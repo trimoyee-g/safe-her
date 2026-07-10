@@ -3,17 +3,17 @@ import type { PlaceCategory } from '@/types'
 // ── Safety score helpers ──────────────────────────────────────────────────────
 
 export function scoreColor(score: number): string {
-  if (score === 0) return 'bg-gray-400 text-white'
-  if (score >= 4.0) return 'bg-brand-400 text-white'
-  if (score >= 2.5) return 'bg-amber-500 text-white'
+  if (score === 0) return 'bg-gray-700 text-gray-300'
+  if (score >= 4.0) return 'bg-brand-400 text-brand-950'
+  if (score >= 2.5) return 'bg-amber-500 text-amber-950'
   return 'bg-red-600 text-white'
 }
 
 export function scoreBorderColor(score: number): string {
-  if (score === 0) return 'border-gray-300 text-gray-500'
-  if (score >= 4.0) return 'border-brand-400 text-brand-600'
-  if (score >= 2.5) return 'border-amber-400 text-amber-600'
-  return 'border-red-400 text-red-600'
+  if (score === 0) return 'border-gray-600 text-gray-400'
+  if (score >= 4.0) return 'border-brand-400 text-brand-200'
+  if (score >= 2.5) return 'border-amber-400 text-amber-300'
+  return 'border-red-400 text-red-300'
 }
 
 export function scoreLabel(score: number): string {
@@ -26,10 +26,10 @@ export function scoreLabel(score: number): string {
 }
 
 export function scoreTextColor(score: number): string {
-  if (score === 0) return 'text-gray-400'
-  if (score >= 4.0) return 'text-brand-600'
-  if (score >= 2.5) return 'text-amber-600'
-  return 'text-red-600'
+  if (score === 0) return 'text-gray-500'
+  if (score >= 4.0) return 'text-brand-200'
+  if (score >= 2.5) return 'text-amber-300'
+  return 'text-red-300'
 }
 
 // ── Category helpers ──────────────────────────────────────────────────────────

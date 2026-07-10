@@ -11,10 +11,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const btnVariant = {
-  primary:   'bg-brand-400 hover:bg-brand-600 text-white border-transparent',
-  secondary: 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200',
-  ghost:     'bg-transparent hover:bg-gray-100 text-gray-600 border-transparent',
-  danger:    'bg-red-600 hover:bg-red-700 text-white border-transparent',
+  primary:   'bg-brand-400 hover:bg-brand-200 text-brand-950 border-transparent',
+  secondary: 'bg-gray-900 hover:bg-gray-800 text-gray-200 border-gray-700',
+  ghost:     'bg-transparent hover:bg-gray-800 text-gray-300 border-transparent',
+  danger:    'bg-red-600 hover:bg-red-500 text-white border-transparent',
 }
 const btnSize = {
   sm: 'px-3 py-1.5 text-xs rounded-md',
@@ -30,7 +30,7 @@ export function Button({
       {...props}
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-1 focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed',
         btnVariant[variant],
         btnSize[size],
         fullWidth && 'w-full',
@@ -57,7 +57,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+          <label htmlFor={inputId} className="text-sm font-medium text-gray-300">
             {label}
           </label>
         )}
@@ -65,15 +65,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={clsx(
-            'w-full px-3 py-2 text-sm border rounded-lg bg-white text-gray-900 placeholder-gray-400',
+            'w-full px-3 py-2 text-sm border rounded-lg bg-gray-900 text-gray-100 placeholder-gray-500',
             'focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent',
-            'disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed',
-            error ? 'border-red-400' : 'border-gray-200',
+            'disabled:bg-gray-900/50 disabled:text-gray-600 disabled:cursor-not-allowed',
+            error ? 'border-red-500' : 'border-gray-700',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-red-400">{error}</p>}
         {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
       </div>
     )
@@ -95,20 +95,20 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-gray-700">{label}</label>
+          <label htmlFor={inputId} className="text-sm font-medium text-gray-300">{label}</label>
         )}
         <textarea
           ref={ref}
           id={inputId}
           className={clsx(
-            'w-full px-3 py-2 text-sm border rounded-lg bg-white text-gray-900 placeholder-gray-400 resize-none',
+            'w-full px-3 py-2 text-sm border rounded-lg bg-gray-900 text-gray-100 placeholder-gray-500 resize-none',
             'focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent',
-            error ? 'border-red-400' : 'border-gray-200',
+            error ? 'border-red-500' : 'border-gray-700',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-red-400">{error}</p>}
         {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
       </div>
     )
@@ -156,8 +156,8 @@ export function Tag({ label, positive = true, selected, onClick, size = 'md' }: 
           'rounded-full font-medium transition-colors border',
           base,
           selected
-            ? 'bg-brand-50 text-brand-800 border-brand-400'
-            : 'bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200'
+            ? 'bg-brand-400/15 text-brand-200 border-brand-400'
+            : 'bg-gray-800 text-gray-400 border-transparent hover:bg-gray-700'
         )}
       >
         {label}
@@ -168,7 +168,7 @@ export function Tag({ label, positive = true, selected, onClick, size = 'md' }: 
     <span className={clsx(
       'rounded-full font-medium',
       base,
-      positive ? 'bg-brand-50 text-brand-800' : 'bg-red-50 text-red-700'
+      positive ? 'bg-brand-400/15 text-brand-200' : 'bg-red-500/15 text-red-300'
     )}>
       {label}
     </span>
@@ -193,8 +193,8 @@ export function Avatar({ name, src, size = 'md', anonymous }: AvatarProps) {
 
   if (anonymous) {
     return (
-      <div className={clsx('rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0', avatarSize[size])}>
-        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className={clsx('rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0', avatarSize[size])}>
+        <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
         </svg>
@@ -207,7 +207,7 @@ export function Avatar({ name, src, size = 'md', anonymous }: AvatarProps) {
   }
 
   return (
-    <div className={clsx('rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-medium flex-shrink-0', avatarSize[size])}>
+    <div className={clsx('rounded-full bg-brand-400/20 text-brand-200 flex items-center justify-center font-medium flex-shrink-0', avatarSize[size])}>
       {initials}
     </div>
   )
@@ -228,7 +228,7 @@ export function Toggle({ checked, onChange, label, description, disabled }: Togg
     <label className={clsx('flex items-center justify-between gap-3', disabled && 'opacity-50 cursor-not-allowed')}>
       {(label || description) && (
         <div className="flex-1">
-          {label && <p className="text-sm font-medium text-gray-800">{label}</p>}
+          {label && <p className="text-sm font-medium text-gray-200">{label}</p>}
           {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
         </div>
       )}
@@ -239,8 +239,8 @@ export function Toggle({ checked, onChange, label, description, disabled }: Togg
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={clsx(
-          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-1',
-          checked ? 'bg-brand-400' : 'bg-gray-300'
+          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-1 focus:ring-offset-gray-950',
+          checked ? 'bg-brand-400' : 'bg-gray-700'
         )}
       >
         <span className={clsx(
@@ -265,21 +265,21 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
     return (
       <div className="flex flex-col gap-1">
-        {label && <label htmlFor={inputId} className="text-sm font-medium text-gray-700">{label}</label>}
+        {label && <label htmlFor={inputId} className="text-sm font-medium text-gray-300">{label}</label>}
         <select
           ref={ref}
           id={inputId}
           className={clsx(
-            'w-full px-3 py-2 text-sm border rounded-lg bg-white text-gray-900',
+            'w-full px-3 py-2 text-sm border rounded-lg bg-gray-900 text-gray-100',
             'focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent',
-            error ? 'border-red-400' : 'border-gray-200',
+            error ? 'border-red-500' : 'border-gray-700',
             className
           )}
           {...props}
         >
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-red-400">{error}</p>}
       </div>
     )
   }
@@ -295,13 +295,13 @@ export function EmptyState({ title, description, action }: {
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mb-4">
+        <svg className="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
             d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h3 className="text-base font-medium text-gray-800 mb-1">{title}</h3>
+      <h3 className="text-base font-medium text-gray-100 mb-1">{title}</h3>
       {description && <p className="text-sm text-gray-500 mb-4 max-w-xs">{description}</p>}
       {action}
     </div>
@@ -313,13 +313,13 @@ export function EmptyState({ title, description, action }: {
 export function ErrorState({ message, retry }: { message?: string; retry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-      <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+      <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
         <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <p className="text-sm text-gray-600 mb-3">{message ?? 'Something went wrong'}</p>
+      <p className="text-sm text-gray-400 mb-3">{message ?? 'Something went wrong'}</p>
       {retry && <Button variant="secondary" size="sm" onClick={retry}>Try again</Button>}
     </div>
   )

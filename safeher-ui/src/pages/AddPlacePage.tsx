@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { placesApi } from '@/api/places.api'
 import { queryKeys } from '@/lib/queryClient'
 import { Input, Textarea, Select, Button } from '@/components/ui'
+import { LocationPicker } from '@/components/map/LocationPicker'
 import type { PlaceCategory } from '@/types'
 import { CATEGORY_LABELS } from '@/utils'
 import { useState } from 'react'
@@ -33,9 +34,11 @@ export function AddPlacePage() {
   const queryClient = useQueryClient()
   const [geoLoading, setGeoLoading] = useState(false)
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+  const latitude = watch('latitude')
+  const longitude = watch('longitude')
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: (data: FormData) => placesApi.create({
@@ -72,27 +75,38 @@ export function AddPlacePage() {
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-300 transition-colors">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <div>
-          <h1 className="text-base font-semibold text-gray-900">Add a place</h1>
-          <p className="text-sm text-gray-500">Help others discover safe places</p>
+          <h1 className="text-base font-semibold text-gray-100">Add a place</h1>
+          <p className="text-sm text-gray-400">Help others discover safe places</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(d => mutate(d))} className="flex flex-col gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col gap-4">
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex flex-col gap-4">
           <Input label="Place name" placeholder="e.g. Gariahat Market" {...register('name')} error={errors.name?.message} />
           <Select label="Category" options={CATEGORY_OPTIONS} {...register('category')} error={errors.category?.message} />
           <Textarea label="Description (optional)" placeholder="What is this place? What makes it notable?"
             rows={3} {...register('description')} error={errors.description?.message} />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col gap-4">
-          <h2 className="text-sm font-medium text-gray-700">Location</h2>
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex flex-col gap-4">
+          <h2 className="text-sm font-medium text-gray-300">Location</h2>
+          <LocationPicker
+            latitude={latitude}
+            longitude={longitude}
+            onPick={(lat, lng) => {
+              setValue('latitude', parseFloat(lat.toFixed(6)), { shouldValidate: true })
+              setValue('longitude', parseFloat(lng.toFixed(6)), { shouldValidate: true })
+            }}
+          />
+          <Button type="button" variant="secondary" size="sm" loading={geoLoading} onClick={useMyLocation}>
+            Use my current location
+          </Button>
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Latitude"
@@ -111,9 +125,6 @@ export function AddPlacePage() {
               error={errors.longitude?.message}
             />
           </div>
-          <Button type="button" variant="secondary" size="sm" loading={geoLoading} onClick={useMyLocation}>
-            Use my current location
-          </Button>
           <Input label="Address" placeholder="Street address" {...register('address')} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="City" placeholder="Kolkata" {...register('city')} />
@@ -121,12 +132,12 @@ export function AddPlacePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
           <Input label="Website (optional)" type="url" placeholder="https://..."
             {...register('website')} error={errors.website?.message} />
         </div>
 
-        {errMsg && <p className="text-sm text-red-600 text-center">{errMsg}</p>}
+        {errMsg && <p className="text-sm text-red-400 text-center">{errMsg}</p>}
 
         <Button type="submit" loading={isPending} fullWidth size="lg">
           Add place

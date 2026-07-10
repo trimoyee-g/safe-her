@@ -14,7 +14,7 @@ import { authApi } from '@/api/auth.api'
 type Tab = 'reviews' | 'places' | 'settings'
 
 export function ProfilePage() {
-  const { userId, username, role, logout, refreshToken } = useAuthStore()
+  const { userId, role, logout, refreshToken } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('reviews')
 
@@ -61,39 +61,39 @@ export function ProfilePage() {
                 {user.displayName ?? user.username}
               </h1>
               {user.verified && (
-                <svg className="w-4 h-4 text-brand-100 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-brand-950/70 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}
             </div>
-            <p className="text-brand-100 text-xs">@{user.username}</p>
-            {user.city && <p className="text-brand-100 text-xs mt-0.5">{user.city}</p>}
+            <p className="text-brand-950/70 text-xs">@{user.username}</p>
+            {user.city && <p className="text-brand-950/70 text-xs mt-0.5">{user.city}</p>}
           </div>
         </div>
 
         {/* Stats */}
-        <div className="flex gap-5 mt-4 pt-4 border-t border-brand-300">
+        <div className="flex gap-5 mt-4 pt-4 border-t border-brand-950/20">
           <div>
             <p className="text-white font-semibold text-lg leading-none">{user.totalReviews}</p>
-            <p className="text-brand-100 text-xs mt-0.5">Reviews</p>
+            <p className="text-brand-950/70 text-xs mt-0.5">Reviews</p>
           </div>
           <div>
             <p className="text-white font-semibold text-lg leading-none">{user.helpfulVotes}</p>
-            <p className="text-brand-100 text-xs mt-0.5">Helpful votes</p>
+            <p className="text-brand-950/70 text-xs mt-0.5">Helpful votes</p>
           </div>
           <div>
             <p className="text-white font-semibold text-lg leading-none capitalize">{role?.toLowerCase()}</p>
-            <p className="text-brand-100 text-xs mt-0.5">Role</p>
+            <p className="text-brand-950/70 text-xs mt-0.5">Role</p>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-4">
+      <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-4">
         {(['reviews', 'places', 'settings'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`flex-1 py-2 text-sm font-medium rounded-lg capitalize transition-colors ${
-              tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              tab === t ? 'bg-gray-800 text-gray-100 shadow-sm shadow-black/20' : 'text-gray-500 hover:text-gray-300'
             }`}>
             {t}
           </button>
@@ -126,17 +126,17 @@ export function ProfilePage() {
       )}
 
       {tab === 'settings' && (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="divide-y divide-gray-50">
-            <Link to="/settings/account" className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
-              <span className="text-sm text-gray-700">Account settings</span>
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <div className="divide-y divide-gray-800">
+            <Link to="/settings/account" className="flex items-center justify-between px-4 py-3 hover:bg-gray-800 transition-colors">
+              <span className="text-sm text-gray-300">Account settings</span>
+              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </Link>
-            <Link to="/settings/security" className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
-              <span className="text-sm text-gray-700">Security & password</span>
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <Link to="/settings/security" className="flex items-center justify-between px-4 py-3 hover:bg-gray-800 transition-colors">
+              <span className="text-sm text-gray-300">Security & password</span>
+              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </Link>

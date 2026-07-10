@@ -1,9 +1,9 @@
 import clsx from 'clsx'
 
 const LABELS = ['', 'Felt very unsafe', 'Felt unsafe', 'Felt okay', 'Felt safe', 'Felt very safe']
-const COLORS = ['', 'text-red-600', 'text-orange-500', 'text-amber-500', 'text-brand-600', 'text-brand-700']
-const BG     = ['', 'bg-red-50 border-red-400', 'bg-orange-50 border-orange-400',
-                    'bg-amber-50 border-amber-400', 'bg-brand-50 border-brand-400', 'bg-brand-50 border-brand-600']
+const COLORS = ['', 'text-red-400', 'text-orange-400', 'text-amber-400', 'text-brand-300', 'text-brand-200']
+const BG     = ['', 'bg-red-500/15 border-red-400', 'bg-orange-500/15 border-orange-400',
+                    'bg-amber-500/15 border-amber-400', 'bg-brand-400/15 border-brand-400', 'bg-brand-400/20 border-brand-300']
 
 interface StarPickerProps {
   value: number
@@ -31,14 +31,14 @@ export function StarPicker({ value, onChange, error }: StarPickerProps) {
               'w-12 h-12 rounded-2xl border-2 flex items-center justify-center transition-all',
               value === n
                 ? BG[n]
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                : 'bg-gray-900 border-gray-700 hover:border-gray-600'
             )}>
               <StarIcon
                 filled={n <= value}
-                className={clsx('w-6 h-6 transition-colors', n <= value ? COLORS[value] : 'text-gray-300')}
+                className={clsx('w-6 h-6 transition-colors', n <= value ? COLORS[value] : 'text-gray-600')}
               />
             </div>
-            <span className={clsx('text-xs font-medium', n === value ? COLORS[n] : 'text-gray-400')}>
+            <span className={clsx('text-xs font-medium', n === value ? COLORS[n] : 'text-gray-500')}>
               {n}
             </span>
           </button>
@@ -49,7 +49,7 @@ export function StarPicker({ value, onChange, error }: StarPickerProps) {
           {LABELS[value]}
         </p>
       )}
-      {error && <p className="text-center text-xs text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-center text-xs text-red-400 mt-1">{error}</p>}
     </div>
   )
 }

@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { placesApi } from '@/api/places.api'
 import { ratingsApi } from '@/api/ratings.api'
 import { queryKeys } from '@/lib/queryClient'
-import { ScoreBadge } from '@/components/ui/ScoreBadge'
 import { ScoreDistributionBar } from '@/components/rating/ScoreDistributionBar'
 import { ReviewCard } from '@/components/rating/ReviewCard'
 import { Button, Spinner, EmptyState, ErrorState, Tag } from '@/components/ui'
@@ -67,7 +66,7 @@ export function PlaceDetailPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Back */}
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300 mb-4 transition-colors">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -80,20 +79,20 @@ export function PlaceDetailPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">{CATEGORY_ICONS[place.category]}</span>
-              <span className="text-brand-100 text-xs font-medium">{CATEGORY_LABELS[place.category]}</span>
+              <span className="text-brand-950/70 text-xs font-medium">{CATEGORY_LABELS[place.category]}</span>
               {place.verified && (
                 <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-medium">Verified</span>
               )}
             </div>
             <h1 className="text-xl font-semibold text-white mb-1">{place.name}</h1>
-            {place.address && <p className="text-brand-100 text-sm truncate">{place.address}</p>}
-            {place.city && <p className="text-brand-100 text-xs">{place.city}{place.country ? `, ${place.country}` : ''}</p>}
+            {place.address && <p className="text-brand-950/70 text-sm truncate">{place.address}</p>}
+            {place.city && <p className="text-brand-950/70 text-xs">{place.city}{place.country ? `, ${place.country}` : ''}</p>}
           </div>
           <div className="flex flex-col items-center flex-shrink-0">
             <div className="text-4xl font-bold text-white leading-none mb-1">
               {formatScore(place.safetyScore)}
             </div>
-            <p className="text-brand-100 text-xs">{place.totalRatings} review{place.totalRatings !== 1 ? 's' : ''}</p>
+            <p className="text-brand-950/70 text-xs">{place.totalRatings} review{place.totalRatings !== 1 ? 's' : ''}</p>
             <p className="text-white text-xs font-medium mt-0.5">{scoreLabel(place.safetyScore)}</p>
           </div>
         </div>
@@ -101,21 +100,21 @@ export function PlaceDetailPage() {
 
       {/* Score breakdown */}
       {summary && summary.totalRatings > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
-          <h2 className="text-sm font-medium text-gray-700 mb-3">Score breakdown</h2>
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-4">
+          <h2 className="text-sm font-medium text-gray-300 mb-3">Score breakdown</h2>
           <ScoreDistributionBar summary={summary} />
         </div>
       )}
 
       {/* Tags cloud */}
       {sortedTags.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
-          <h2 className="text-sm font-medium text-gray-700 mb-2">What people say</h2>
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-4">
+          <h2 className="text-sm font-medium text-gray-300 mb-2">What people say</h2>
           <div className="flex flex-wrap gap-2">
             {sortedTags.map(([tag, count]) => (
               <div key={tag} className="flex items-center gap-1">
                 <Tag label={tag} positive={isPositiveTag(tag)} size="md" />
-                <span className="text-xs text-gray-400">({count})</span>
+                <span className="text-xs text-gray-500">({count})</span>
               </div>
             ))}
           </div>
@@ -131,8 +130,8 @@ export function PlaceDetailPage() {
               onClick={() => { setSortBy(opt.value); setPage(0) }}
               className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 sortBy === opt.value
-                  ? 'bg-brand-400 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-brand-400 text-brand-950'
+                  : 'bg-gray-900 text-gray-400 hover:bg-gray-800'
               }`}
             >
               {opt.label}
@@ -197,9 +196,9 @@ export function PlaceDetailPage() {
 
       {/* Description */}
       {place.description && (
-        <div className="bg-white rounded-xl border border-gray-100 p-4 mt-4">
-          <h2 className="text-sm font-medium text-gray-700 mb-2">About</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">{place.description}</p>
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mt-4">
+          <h2 className="text-sm font-medium text-gray-300 mb-2">About</h2>
+          <p className="text-sm text-gray-400 leading-relaxed">{place.description}</p>
         </div>
       )}
     </div>

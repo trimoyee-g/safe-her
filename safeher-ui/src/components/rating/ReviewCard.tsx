@@ -68,7 +68,7 @@ export function ReviewCard({ rating, placeId, onDelete }: ReviewCardProps) {
   const authorName = rating.anonymous ? 'Anonymous' : (rating.authorDisplayName ?? 'SafeHer user')
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
+    <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar
@@ -78,10 +78,10 @@ export function ReviewCard({ rating, placeId, onDelete }: ReviewCardProps) {
           size="md"
         />
         <div className="flex-1 min-w-0">
-          <p className={clsx('text-sm font-medium', rating.anonymous ? 'text-gray-500 italic' : 'text-gray-900')}>
+          <p className={clsx('text-sm font-medium', rating.anonymous ? 'text-gray-500 italic' : 'text-gray-100')}>
             {authorName}
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500">
             {formatDistanceToNow(new Date(rating.createdAt), { addSuffix: true })}
           </p>
         </div>
@@ -90,10 +90,10 @@ export function ReviewCard({ rating, placeId, onDelete }: ReviewCardProps) {
 
       {/* Content */}
       {rating.title && (
-        <p className="text-sm font-medium text-gray-800 mb-1">{rating.title}</p>
+        <p className="text-sm font-medium text-gray-200 mb-1">{rating.title}</p>
       )}
       {rating.body && (
-        <p className="text-sm text-gray-700 leading-relaxed mb-3">{rating.body}</p>
+        <p className="text-sm text-gray-300 leading-relaxed mb-3">{rating.body}</p>
       )}
 
       {/* Tags */}
@@ -106,15 +106,15 @@ export function ReviewCard({ rating, placeId, onDelete }: ReviewCardProps) {
       )}
 
       {/* Footer actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+      <div className="flex items-center justify-between pt-2 border-t border-gray-800">
         <button
           onClick={handleHelpful}
           disabled={!isAuthenticated || isOwner}
           className={clsx(
             'flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors',
             markedHelpful
-              ? 'bg-brand-50 text-brand-700 border border-brand-200'
-              : 'text-gray-500 hover:bg-gray-100 border border-transparent',
+              ? 'bg-brand-400/15 text-brand-200 border border-brand-400/30'
+              : 'text-gray-500 hover:bg-gray-800 border border-transparent',
             (!isAuthenticated || isOwner) && 'cursor-default opacity-50'
           )}
         >
@@ -129,7 +129,7 @@ export function ReviewCard({ rating, placeId, onDelete }: ReviewCardProps) {
         <div className="flex items-center gap-2">
           {canDelete && (
             <button onClick={handleDelete}
-              className="text-xs text-red-500 hover:text-red-700 transition-colors">
+              className="text-xs text-red-400 hover:text-red-300 transition-colors">
               Delete
             </button>
           )}
@@ -137,7 +137,7 @@ export function ReviewCard({ rating, placeId, onDelete }: ReviewCardProps) {
             <button
               onClick={handleReport}
               disabled={reporting || reported}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-50"
             >
               {reported ? 'Reported' : 'Report'}
             </button>
